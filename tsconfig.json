@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
@@ -13,7 +17,20 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node", "vite/client"]
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "paths": {
+      "@zumer/pulse": [
+        "../pulse/src/index.ts"
+      ]
+    }
   },
-  "include": ["*.ts", "card", "demo", "scripts", "tests"]
+  "include": [
+    "src",
+    "scripts",
+    "tests",
+    "*.ts"
+  ]
 }

@@ -105,7 +105,7 @@ test('a shared link opens a demo home directly and leaving it returns to the sig
   await expect(page).toHaveURL(`${HA}/`);
 });
 
-// The card (card/zumer-pulse.ts) on its bench, card.html: a `hass` object built
+// The card (src/card/zumer-pulse.ts) on its bench, card.html: a `hass` object built
 // from a demo home, the object inside the card's shadow root.
 const card = (page: Page) => page.locator('zumer-pulse');
 

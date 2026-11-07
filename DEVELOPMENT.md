@@ -1,8 +1,8 @@
 # Pulse for Home Assistant: development
 
 How the app and the card are put together, the demo homes, the scripts and the
-tests. What Pulse is and how to install it: [README.md](README.md). The options,
-entities and alerts: [card/README.md](card/README.md).
+tests. What Pulse is, how to install it, its options, the entities each system
+reads, the alerts and the troubleshooting: [README.md](README.md).
 
 ## Run it locally
 
@@ -27,33 +27,40 @@ select **Explore the demo**, start from the
 The app converts Home Assistant's entity states into the systems, readings and
 actions of `@zumer/pulse`, the core, which handles the board, the layers, the
 controls, the details and the settings panel. The core lives in its own
-repository, [zumerlab/pulse](https://github.com/zumerlab/pulse); while it is
-not on npm it comes in as a link to a sibling checkout
-(`"@zumer/pulse": "file:../pulse/packages/core"`), so a change there is live
-here at once. `vite.shared.ts` lets Vite serve it from where it really is.
+repository, [zumerlab/pulse](https://github.com/zumerlab/pulse), and comes in
+as a dependency. When a checkout of it sits beside this one (`../pulse`),
+`vite.shared.ts` and the `paths` in `tsconfig.json` read it live from
+`../pulse/src`, so a change there shows here at once; otherwise the npm
+package is used. Until the core is on npm the dependency is
+`"@zumer/pulse": "file:../pulse"`.
+
+`src/` is Vite's root: the pages live there (`index.html` the app,
+`gallery.html` the index of demo homes, `card.html` the card's bench) with
+the code.
 
 | File or directory | Responsibility |
 |---|---|
-| [main.ts](main.ts) | Starts the standalone app, reads URL options and switches between live and demo sources |
-| [login.ts](login.ts) | Sign-in panel and demo selection; [preview.ts](preview.ts) draws the chosen home's rings beside it |
-| [app.ts](app.ts) | `mountPulse`: mounts the core board with Home Assistant options and labels |
-| [host.ts](host.ts) | Adapts a `PulseSource` to the core's `PulseHost` interface |
-| [model.ts](model.ts) | Entity selection, systems, channels, alert rules, room grouping, the objects of cameras and people, Assist |
-| [source.ts](source.ts) | Source interface, WebSocket connection, authentication, registry loading, notices, `ask` |
-| [strings.ts](strings.ts) | The app's text |
-| [demo/](demo/) | Simulated source, entity behavior and generated home data |
-| [card/](card/) | Custom card, dashboard and section strategies, and the `hass` source |
-| [card-bench.ts](card-bench.ts) | Runs the real card with demo data for local development |
+| [main.ts](src/main.ts) | Starts the standalone app, reads URL options and switches between live and demo sources |
+| [login.ts](src/login.ts) | Sign-in panel and demo selection; [preview.ts](src/preview.ts) draws the chosen home's rings beside it |
+| [gallery.ts](src/gallery.ts) | The index of demo homes, `gallery.html`: every home previewed with the rings its entities fill |
+| [app.ts](src/app.ts) | `mountPulse`: mounts the core board with Home Assistant options and labels |
+| [host.ts](src/host.ts) | Adapts a `PulseSource` to the core's `PulseHost` interface |
+| [model.ts](src/model.ts) | Entity selection, systems, channels, alert rules, room grouping, the objects of cameras and people, Assist |
+| [source.ts](src/source.ts) | Source interface, WebSocket connection, authentication, registry loading, notices, `ask` |
+| [strings.ts](src/strings.ts) | The app's text |
+| [demo/](src/demo/) | Simulated source, entity behavior and generated home data |
+| [card/](src/card/) | Custom card, dashboard and section strategies, and the `hass` source |
+| [card-bench.ts](src/card-bench.ts) | Runs the real card with demo data for local development |
 | [scripts/](scripts/) | Helpers for testing against a local Home Assistant |
-| [hls-none.ts](hls-none.ts) | What the HA builds alias `hls.js` to: Home Assistant's cameras are stills or MJPEG, so the video stack stays out of the bundle |
+| [hls-none.ts](src/hls-none.ts) | What the HA builds alias `hls.js` to: Home Assistant's cameras are stills or MJPEG, so the video stack stays out of the bundle |
 
-To add a channel or change how entities are selected, start in `model.ts`.
+To add a channel or change how entities are selected, start in `src/model.ts`.
 To change shared rendering or interactions, work in the core,
 [zumerlab/pulse](https://github.com/zumerlab/pulse).
 
 ### Alerts and command feedback
 
-Alerts come from rules in [model.ts](model.ts). Some use one entity, such as
+Alerts come from rules in [model.ts](src/model.ts). Some use one entity, such as
 a low battery or a jammed lock. Others combine states: heating with a window
 open, a garage door open at night, or motion while the alarm is armed.
 
@@ -158,12 +165,12 @@ re-dated to today, so its next rising and setting are always ahead.
 The home data is generated from a Home Assistant frontend checkout:
 
 ```sh
-python3 demo/scripts/import-homes.py /path/to/frontend
+python3 src/demo/scripts/import-homes.py /path/to/frontend
 ```
 
 Add `--check` to compare without writing. Update the source checkout and rerun
-the importer rather than editing files in `demo/homes/` by hand. Source
-attribution and the Apache 2.0 license are recorded in [demo/NOTICE.md](demo/NOTICE.md).
+the importer rather than editing files in `src/demo/homes/` by hand. Source
+attribution and the Apache 2.0 license are recorded in [src/demo/NOTICE.md](src/demo/NOTICE.md).
 
 ## Build and check
 
@@ -210,4 +217,4 @@ creates or updates two test dashboards in Home Assistant;
   Pulse relies on modern CSS features.
 
 For resource-loading errors, card configuration and dashboard layout issues,
-see [card troubleshooting](card/README.md#troubleshooting).
+see the [README's troubleshooting](README.md#troubleshooting).

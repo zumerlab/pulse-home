@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate demo/homes/*.ts from a checkout of home-assistant/frontend.
+"""Regenerate src/demo/homes/*.ts from a checkout of home-assistant/frontend.
 
     python3 import-homes.py <frontend checkout> [--check]
 

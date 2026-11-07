@@ -19,7 +19,7 @@
     "test:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@zumer/pulse": "file:../pulse/packages/core",
+    "@zumer/pulse": "file:../pulse",
     "home-assistant-js-websocket": "9.8.1"
   },
   "devDependencies": {

@@ -1,18 +1,34 @@
-import { realpathSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { UserConfig } from 'vite';
+import type { AliasOptions, UserConfig } from 'vite';
 
-// The core (`@zumer/pulse`) comes in as a link to ../pulse/packages/core while
-// it is not on npm. Vite then serves its files from where they really are,
-// outside this repo, so that folder is allowed; and the core's own imports of
-// Orbit, Zumly and hls.js must land on this repo's copies, not on the core
-// repo's, or Orbit would register its elements twice. Once the core is a
-// published version, both lines are harmless.
+// The core, `@zumer/pulse`, is read live from a checkout beside this one when
+// there is one (../pulse/src, the files its npm build is made from), so a
+// change there shows here at once; otherwise the npm package is used, which is
+// what a clone of this repo alone gets. The alias covers the two entries a
+// project imports; the core's own imports of Orbit, Zumly and hls.js are
+// deduped onto this repo's copies, so Orbit registers its elements once.
+// tsconfig `paths` does the same for the types. Each Vite config is
+// `defineConfig(withCore({ … }))`.
 const here = fileURLToPath(new URL('.', import.meta.url));
-const core = realpathSync(fileURLToPath(new URL('./node_modules/@zumer/pulse', import.meta.url)));
+const pulse = fileURLToPath(new URL('../pulse/', import.meta.url));
+const live = existsSync(`${pulse}src/index.ts`);
+
+const entries = (alias: AliasOptions | undefined) =>
+  !alias ? [] : Array.isArray(alias) ? alias : Object.entries(alias).map(([find, replacement]) => ({ find, replacement }));
 
 export const withCore = (config: UserConfig): UserConfig => ({
   ...config,
-  server: { ...config.server, fs: { ...config.server?.fs, allow: [...(config.server?.fs?.allow ?? []), here, core] } },
-  resolve: { ...config.resolve, dedupe: [...(config.resolve?.dedupe ?? []), '@zumer/orbit', 'zumly', 'hls.js'] },
+  server: { ...config.server, fs: { ...config.server?.fs, allow: [...(config.server?.fs?.allow ?? []), here, ...(live ? [pulse] : [])] } },
+  resolve: {
+    ...config.resolve,
+    dedupe: [...(config.resolve?.dedupe ?? []), '@zumer/orbit', 'zumly', 'hls.js'],
+    alias: [
+      ...(live ? [
+        { find: /^@zumer\/pulse\/style\.css$/, replacement: `${pulse}src/style.css` },
+        { find: /^@zumer\/pulse$/, replacement: `${pulse}src/index.ts` },
+      ] : []),
+      ...entries(config.resolve?.alias),
+    ],
+  },
 });
