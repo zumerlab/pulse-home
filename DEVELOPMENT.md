@@ -202,6 +202,11 @@ For local integration work, `scripts/ha-tokens.mjs` creates a tokens file from
 `.env.local`. `scripts/ha-install-card.mjs` registers a dashboard resource and
 creates or updates two test dashboards in Home Assistant;
 `scripts/ha-check-card.mjs` checks them with Playwright and saves screenshots.
+`scripts/record-tour.mjs <dir> [ffmpeg]` records two short videos of the app
+over a demo home with Playwright, for a post or a page: the board (views,
+rooms, themes, backgrounds) and the inside of a system (a dial, a detail, a
+choice, the switches, the month of a meter). With an ffmpeg given (or
+`FFMPEG` set) each comes out as an mp4, otherwise as webm.
 
 ## Troubleshooting
 
