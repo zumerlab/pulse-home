@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.tsbuildinfo
+.pulse/
+.env
+.env.*
+!.env.example
+test-results/
+playwright-report/
+dist-card/
+.claude/

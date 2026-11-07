@@ -1,0 +1,36 @@
+{
+  "name": "pulse-home",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pulse for Home Assistant: the standalone app, the zumer-pulse card and the dashboard and section strategies, over a live Home Assistant or the demo homes.",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.18.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 5174",
+    "build:card": "vite build -c vite.card.config.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "@zumer/pulse": "file:../pulse/packages/core",
+    "home-assistant-js-websocket": "9.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "@zumer/orbit": "^2.2.0",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.1",
+    "vite": "8.3.0",
+    "zumly": "^1.2.2"
+  }
+}
