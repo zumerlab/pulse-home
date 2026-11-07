@@ -31,8 +31,7 @@ repository, [zumerlab/pulse](https://github.com/zumerlab/pulse), and comes in
 as a dependency. When a checkout of it sits beside this one (`../pulse`),
 `vite.shared.ts` and the `paths` in `tsconfig.json` read it live from
 `../pulse/src`, so a change there shows here at once; otherwise the npm
-package is used. Until the core is on npm the dependency is
-`"@zumer/pulse": "file:../pulse"`.
+package is used.
 
 `src/` is Vite's root: the pages live there (`index.html` the app,
 `gallery.html` the index of demo homes, `card.html` the card's bench) with
