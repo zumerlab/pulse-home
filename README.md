@@ -22,7 +22,9 @@ Pulse does the opposite.
 
 ## Where it comes from
 
-Pulse comes from Zircule. It is built on two open-source pieces by ZumerLab:
+Pulse comes from [zircle-ui](https://github.com/zircleUI/zircleUI), an earlier
+library of zoomable user interfaces: circles you zoom into. It is built on two
+open-source pieces by ZumerLab:
 [Orbit](https://zumerlab.com/orbit/) draws the rings and the layers, and
 [Zumly](https://zumerlab.com/zumly/) is the zoom, from the whole home into one
 system, into a detail, and back.
