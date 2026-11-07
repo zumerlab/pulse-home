@@ -279,6 +279,11 @@ where it has them. Assist answers in the language of your Home Assistant.
 - **"Custom element doesn't exist: zumer-pulse".** The resource is not loaded:
   check the URL and type under *Resources*, and hard-reload. In the Companion
   app, clear the frontend cache (*Settings › Companion app › Troubleshooting*).
+- **Installed from the Marketplace, but nothing loads and the resource gives
+  404.** If this was the first dashboard resource of your Home Assistant,
+  the `www` folder did not exist when it started, and Home Assistant only
+  serves `/local/...` from a folder it saw at startup. Restart Home Assistant
+  once.
 - **The card still looks like the old version after an update.** Change the
   resource URL's `?v=` so the browser fetches the new file.
 - **A grey card with an error text.** An option has a wrong value; the message
