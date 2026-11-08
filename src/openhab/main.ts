@@ -3,7 +3,7 @@ import '@zumer/orbit/style';
 import '@zumer/orbit';
 import '@zumer/pulse/style.css';
 import '../style.css';
-import { BOARD_MODES, esc, mountBoard, type BoardMode } from '@zumer/pulse';
+import { BOARD_MODES, esc, mountBoard, type BoardMode, type BoardOptions } from '@zumer/pulse';
 import { DemoSource } from './demo/source.ts';
 import { hostOf } from './host.ts';
 import { previewHouse } from './preview.ts';
@@ -42,6 +42,9 @@ function status() {
 }
 
 // `?systems=lights,climate&mode=orbit&start=climate&axis=groups` fixes what the page shows; the gear chooses within that.
+// The pages build is the public demo: the board opens as it shows best, the orbit by group with the
+// switch between views on it; the address and the gear still decide.
+const PRESET: Pick<BoardOptions, 'mode' | 'axis' | 'look'> = __PAGES__ ? { mode: 'orbit', axis: 'groups', look: { modes: 'shown' } } : {};
 const listParam = (name: string) => { const v = query.get(name)?.split(',').map((s) => s.trim()).filter(Boolean); return v?.length ? v : undefined; };
 const modeParam = query.get('mode') as BoardMode | null;
 const axisParam = query.get('axis');
@@ -49,9 +52,10 @@ const axisParam = query.get('axis');
 const board = mountBoard(canvas, {
   host: hostOf(source),
   systems: listParam('systems'),
-  mode: modeParam && BOARD_MODES.includes(modeParam) ? modeParam : undefined,
-  axis: axisParam === 'groups' || axisParam === 'systems' ? axisParam : undefined,
+  mode: modeParam && BOARD_MODES.includes(modeParam) ? modeParam : PRESET.mode,
+  axis: axisParam === 'groups' || axisParam === 'systems' ? axisParam : PRESET.axis,
   start: query.get('start') ?? undefined,
+  look: PRESET.look,
   settings: 'pulse-openhab-settings',
   status,
   strings: { connecting: t.connecting, things: t.things, hostError: t.hostError, noGroup: t.noRoom },

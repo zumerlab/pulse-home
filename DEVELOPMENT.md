@@ -149,7 +149,10 @@ Four ways to reach a server, decided by the build and the URL:
 - **On a plain host** (`npm run build:pages`, what zumerlab.com/pulse-home/
   serves): no openHAB behind the page and no proxy. The house as recorded
   opens by itself; an address typed in the panel (required there) is read
-  directly, with CORS on that server and over HTTPS when the page is.
+  directly, with CORS on that server and over HTTPS when the page is. The
+  board opens as the orbit by group with the switch between views on it
+  (`__PAGES__`, a preset in each app's entry); the address and the gear
+  still decide.
 
 If Pulse is served over HTTPS, the server's address must also use HTTPS.
 Browsers block a connection from an HTTPS page to an HTTP server. The

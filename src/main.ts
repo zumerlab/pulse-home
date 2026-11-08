@@ -6,7 +6,7 @@ import './style.css';
 import { WebSocketSource, type PulseSource } from './source.ts';
 import { DemoSource } from './demo/source.ts';
 import { mountLogin } from './login.ts';
-import { AXES, BOARD_MODES, mountPulse, type Axis, type BoardMode } from './app.ts';
+import { AXES, BOARD_MODES, mountPulse, type Axis, type BoardMode, type PulseOptions } from './app.ts';
 import { t } from './strings.ts';
 
 // The standalone app: the object (`app.ts`) on the page, over Home Assistant's
@@ -31,15 +31,19 @@ function status(ha: PulseSource) {
 const query = new URLSearchParams(location.search);
 const listParam = (name: string) => { const v = query.get(name)?.split(',').map((s) => s.trim()).filter(Boolean); return v?.length ? v : undefined; };
 const modeParam = query.get('mode') as BoardMode | null, axisParam = query.get('axis') as Axis | null;
+// The pages build is the public demo: the board opens as it shows best, the orbit by room with the
+// switch between views on it; the address and the gear still decide.
+const PRESET: Pick<PulseOptions, 'mode' | 'axis' | 'look'> = __PAGES__ ? { mode: 'orbit', axis: 'rooms', look: { modes: 'shown' } } : {};
 
 const pulse = mountPulse(canvas, {
   source: socket,
   systems: listParam('systems'),
   areas: listParam('areas'),
-  mode: modeParam && BOARD_MODES.includes(modeParam) ? modeParam : undefined,
-  axis: axisParam && AXES.includes(axisParam) ? axisParam : undefined,
+  mode: modeParam && BOARD_MODES.includes(modeParam) ? modeParam : PRESET.mode,
+  axis: axisParam && AXES.includes(axisParam) ? axisParam : PRESET.axis,
   start: query.get('start') ?? undefined,
   layers: Number(query.get('layers')) || undefined,
+  look: PRESET.look,
   status,
   exit: (ha) => (ha.status === 'signed-out' ? null : ha === demo ? t.leaveDemo : t.signOut),
   onAction: (action) => { if (action === 'signout') void leave(); },

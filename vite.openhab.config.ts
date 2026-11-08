@@ -13,7 +13,7 @@ export default defineConfig(withCore({
   root: at('./src/openhab'),
   base: './',
   envDir: at('.'),
-  define: { __OPENHAB_TARGET__: JSON.stringify(''), __OPENHAB_SAME_ORIGIN__: 'true' },
+  define: { __OPENHAB_TARGET__: JSON.stringify(''), __OPENHAB_SAME_ORIGIN__: 'true', __PAGES__: 'false' },
   // No hls.js here either (see src/hls-none.ts): openHAB's pictures are stills.
   resolve: { alias: { 'hls.js': at('./src/hls-none.ts') } },
   build: {

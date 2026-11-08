@@ -10,12 +10,14 @@ const at = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 // `npm run build:pages` → dist-pages/. Relative paths, so the folder can sit
 // anywhere; no openHAB target and no proxy, so the openHAB app opens the house
 // as recorded and reads an openHAB of yours by its address alone (CORS on
-// there); the Home Assistant app signs in to yours or opens a demo home.
+// there); the Home Assistant app signs in to yours or opens a demo home. The
+// board opens as the orbit by group with the switch between views on it
+// (`__PAGES__`, a preset in each app's entry); the address and the gear still decide.
 export default defineConfig(withCore({
   root: at('./src'),
   base: './',
   envDir: at('.'),
-  define: { __OPENHAB_TARGET__: JSON.stringify(''), __OPENHAB_SAME_ORIGIN__: 'false' },
+  define: { __OPENHAB_TARGET__: JSON.stringify(''), __OPENHAB_SAME_ORIGIN__: 'false', __PAGES__: 'true' },
   // No hls.js here either (see src/hls-none.ts): the cameras are stills and MJPEG.
   resolve: { alias: { 'hls.js': at('./src/hls-none.ts') } },
   build: {

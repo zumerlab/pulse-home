@@ -25,7 +25,7 @@ const proxy: Record<string, ProxyOptions> = {
 export default defineConfig(withCore({
   root: at('./src'),
   envDir: at('.'),
-  define: { __OPENHAB_TARGET__: JSON.stringify(openhab), __OPENHAB_SAME_ORIGIN__: 'false' },
+  define: { __OPENHAB_TARGET__: JSON.stringify(openhab), __OPENHAB_SAME_ORIGIN__: 'false', __PAGES__: 'false' },
   server: { host: '127.0.0.1', strictPort: true, proxy },
   preview: { host: '127.0.0.1', strictPort: true, proxy },
   // No hls.js in this build (see src/hls-none.ts): the cameras are stills and MJPEG.
