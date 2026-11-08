@@ -30,6 +30,7 @@
 .login-demo .plain, .login details .plain { justify-self: start; }
 .login-link { font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .login-link:hover { color: var(--ink); }
+.login-other { margin-top: 4px; }
 
 /* The index: cards for your Home Assistant, the demo app and the demo homes */
 .gallery { max-width: 1100px; margin: 0 auto; padding: 40px 16px 60px; display: grid; gap: 16px; }
@@ -42,6 +43,7 @@
 .home-card:hover, .home-card:focus-visible { border-color: var(--muted); background: color-mix(in srgb, var(--ink) 5%, transparent); outline: none; }
 .home-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 17px; }
 .home-lead, .home-foot { font-size: 13px; color: var(--muted); }
+.home-tag { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .home-card .tiles { justify-content: flex-start; gap: 6px 2px; margin: 6px 0 2px; }
 .home-card .tile { width: 70px; height: 104px; gap: 6px; pointer-events: none; }
 .home-card .mini-ring { width: 54px; }

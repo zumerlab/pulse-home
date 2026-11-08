@@ -74,14 +74,22 @@ test('a demo home opens from the sign-in panel and its entities answer the ring'
 
 test('the index previews every demo home with the rings it fills, and opens one', async ({ page }) => {
   await page.goto(`${HA}/gallery.html`);
-  await expect(page.locator('.home-card-live')).toContainText('Your Home Assistant');
+  // The two platforms side by side, each in its own words.
+  await expect(page.locator('.home-card-live').first()).toContainText('Your Home Assistant');
+  await expect(page.locator('.home-card-live').nth(1)).toContainText('Your openHAB');
   const cards = page.locator('[data-homes] .home-card');
-  await expect(cards).toHaveCount(6);
+  await expect(cards).toHaveCount(7);
   await expect(cards.first()).toContainText('Home page');
   await expect(cards.first().locator('.tile')).toHaveCount(7);
   await expect(cards.first().locator('.tile[data-system="climate"] .tile-big')).toHaveText('21.5°C');
   await expect(cards.nth(1).locator('.tile')).toHaveCount(8);
   await expect(cards.first()).toContainText(/\d+ entities in 7 systems/);
+  // openHAB's demo house, previewed from its own model, among them.
+  await expect(cards.last()).toContainText('Demo house');
+  await expect(cards.last().locator('.home-tag')).toHaveText('openHAB');
+  await expect(cards.last().locator('.tile')).toHaveCount(8);
+  await expect(cards.last()).toContainText(/233 items in 8 systems/);
+  await expect(cards.last()).toHaveAttribute('href', './openhab/index.html?demo');
   // No timers left running from the previews: the page stays quiet.
   await cards.nth(1).click();
   await expect(page).toHaveURL(/\?demo=sections$/);

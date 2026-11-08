@@ -1,7 +1,8 @@
 // The sign-in panel: the address of the user's Home Assistant and a button
 // that takes them to Home Assistant's own login page. Below it, the demo homes
-// of demo.home-assistant.io for whoever has no Home Assistant at hand, and,
-// for kiosks and automation, a long-lived access token instead.
+// of demo.home-assistant.io for whoever has no Home Assistant at hand, for
+// kiosks and automation a long-lived access token instead, and the way to the
+// other app of this repo, Pulse for openHAB.
 
 import { esc } from '@zumer/pulse';
 import { t } from './strings.ts';
@@ -36,6 +37,7 @@ export function mountLogin(root: HTMLElement, ha: WebSocketSource, onDemo: (home
         <p class="login-hint">${t.tokenHint}</p>
         <button type="button" class="plain" data-login="token">${t.connect}</button>
       </details>
+      <p class="login-hint login-other"><a class="login-link" href="./openhab/index.html">${t.otherPlatform}</a></p>
     </div>
     <aside class="login-side" data-preview aria-live="polite"></aside>
   </form>`;

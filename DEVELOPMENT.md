@@ -1,8 +1,9 @@
-# Pulse for Home Assistant: development
+# Pulse for the home: development
 
-How the app and the card are put together, the demo homes, the scripts and the
-tests. What Pulse is, how to install it, its options, the entities each system
-reads, the alerts and the troubleshooting: [README.md](README.md).
+How the apps and the card are put together, the demo homes, the scripts and
+the tests. What Pulse is, how to install it on each platform, its options,
+what each system reads, the alerts and the troubleshooting:
+[README.md](README.md).
 
 ## Run it locally
 
@@ -13,18 +14,30 @@ npm ci
 npm run dev
 ```
 
-Open [the app](http://127.0.0.1:5174), enter your Home Assistant URL and sign
-in. The browser connects directly to Home Assistant; Pulse needs no backend
-and no integration installed on the server.
+One development server, on port 5174, serves both apps and the gallery:
 
-Without a Home Assistant instance, choose a home in the sign-in panel and
-select **Explore the demo**, start from the
-[demo gallery](http://127.0.0.1:5174/gallery.html), or open
-[a demo home directly](http://127.0.0.1:5174/?demo=home).
+| Page | What it is |
+|---|---|
+| [`/`](http://127.0.0.1:5174/) | Pulse for Home Assistant: enter your Home Assistant URL and sign in, or pick a demo home |
+| [`/openhab/`](http://127.0.0.1:5174/openhab/) | Pulse for openHAB: enter your openHAB address, or open the demo house |
+| [`/gallery.html`](http://127.0.0.1:5174/gallery.html) | The index of demo homes, every one previewed with the rings it fills |
+| `/card.html` | The card's bench (development only) |
+
+The browser talks to Home Assistant directly, over its WebSocket. It talks to
+openHAB directly when that openHAB allows it (CORS on, or the page served by
+openHAB itself); otherwise the development server fetches for it under
+`/oh`: `OPENHAB_URL=http://openhab.local:8080 npm run dev` points that proxy
+at your server, and with nothing set it points at `demo.openhab.org`, the
+openHAB project's public demo house, live. Pulse needs no backend and
+nothing installed on either server.
+
+Without a server at hand, each panel offers a demo:
+[a Home Assistant demo home](http://127.0.0.1:5174/?demo=home) or
+[the openHAB demo house](http://127.0.0.1:5174/openhab/?demo).
 
 ## How it works
 
-The app converts Home Assistant's entity states into the systems, readings and
+Each app converts what its platform reports into the systems, readings and
 actions of `@zumer/pulse`, the core, which handles the board, the layers, the
 controls, the details and the settings panel. The core lives in its own
 repository, [zumerlab/pulse](https://github.com/zumerlab/pulse), and comes in
@@ -33,49 +46,66 @@ as a dependency. When a checkout of it sits beside this one (`../pulse`),
 `../pulse/src`, so a change there shows here at once; otherwise the npm
 package is used.
 
-`src/` is Vite's root: the pages live there (`index.html` the app,
-`gallery.html` the index of demo homes, `card.html` the card's bench) with
-the code.
+`src/` is Vite's root. The Home Assistant app and the card live at its top,
+the openHAB app in `src/openhab/`, and what both share in
+[shared.ts](src/shared.ts): hours told in the home's time zone, distances and
+map zooms, the preview tiles of a home. Neither app imports the other.
+
+### Home Assistant
 
 | File or directory | Responsibility |
 |---|---|
 | [main.ts](src/main.ts) | Starts the standalone app, reads URL options and switches between live and demo sources |
 | [login.ts](src/login.ts) | Sign-in panel and demo selection; [preview.ts](src/preview.ts) draws the chosen home's rings beside it |
-| [gallery.ts](src/gallery.ts) | The index of demo homes, `gallery.html`: every home previewed with the rings its entities fill |
 | [app.ts](src/app.ts) | `mountPulse`: mounts the core board with Home Assistant options and labels |
 | [host.ts](src/host.ts) | Adapts a `PulseSource` to the core's `PulseHost` interface |
 | [model.ts](src/model.ts) | Entity selection, systems, channels, alert rules, room grouping, the objects of cameras and people, Assist |
 | [source.ts](src/source.ts) | Source interface, WebSocket connection, authentication, registry loading, notices, `ask` |
-| [strings.ts](src/strings.ts) | The app's text |
+| [strings.ts](src/strings.ts) | The app's text, and the gallery's |
 | [demo/](src/demo/) | Simulated source, entity behavior and generated home data |
 | [card/](src/card/) | Custom card, dashboard and section strategies, and the `hass` source |
 | [card-bench.ts](src/card-bench.ts) | Runs the real card with demo data for local development |
 | [scripts/](scripts/) | Helpers for testing against a local Home Assistant |
-| [hls-none.ts](src/hls-none.ts) | What the HA builds alias `hls.js` to: Home Assistant's cameras are stills or MJPEG, so the video stack stays out of the bundle |
+| [hls-none.ts](src/hls-none.ts) | What every build here aliases `hls.js` to: the cameras are stills or MJPEG, so the video stack stays out of the bundle |
 
-To add a channel or change how entities are selected, start in `src/model.ts`.
-To change shared rendering or interactions, work in the core,
+### openHAB
+
+| File or directory | Responsibility |
+|---|---|
+| [openhab/main.ts](src/openhab/main.ts) | Starts the app, reads URL options, draws the connect panel and switches between live and demo sources; [openhab/preview.ts](src/openhab/preview.ts) draws the demo house's rings beside the panel |
+| [openhab/host.ts](src/openhab/host.ts) | Adapts a `HouseSource` to the core's `PulseHost`: floors as groups, rooms as the second axis, people as objects, history and changes from persistence |
+| [openhab/model.ts](src/openhab/model.ts) | The house read from the semantic model (Locations, Equipment, Points and their properties), the systems and channels, the alert rules, the rooms |
+| [openhab/source.ts](src/openhab/source.ts) | `HouseSource` and its REST implementation: the items with their semantics, the event stream, commands, persistence; the proxy and the remembered server |
+| [openhab/strings.ts](src/openhab/strings.ts) | The app's text |
+| [openhab/demo/](src/openhab/demo/) | The recorded demo house (`recording.json`), its drawn covers, the source that plays it, and the recorder |
+| [openhab/index.html](src/openhab/index.html) | The page: `/openhab/` in development, the `index.html` of the folder openHAB serves |
+| [gallery.ts](src/gallery.ts) | The index of the demo homes of both platforms, `gallery.html` |
+
+To add a channel or change how things are selected, start in that platform's
+`model.ts`. To change shared rendering or interactions, work in the core,
 [zumerlab/pulse](https://github.com/zumerlab/pulse).
 
 ### Alerts and command feedback
 
-Alerts come from rules in [model.ts](src/model.ts). Some use one entity, such as
-a low battery or a jammed lock. Others combine states: heating with a window
-open, a garage door open at night, or motion while the alarm is armed.
+Alerts come from rules in each `model.ts`. Some use one thing, such as a low
+battery or a jammed lock. Others combine states: heating with a window open,
+a garage or a door open at night, motion while the alarm is armed.
 
-An alert can offer a service call, such as locking a door, or an
-acknowledgement. Muting an alert removes its wave and moves it behind the
-active layer. It can return if its text changes. A new critical alert opens
-its system when you are on the board.
+An alert can offer an action, such as locking a door or turning a heating
+off, or an acknowledgement. Muting an alert removes its wave and moves it
+behind the active layer. It can return if its text changes. A new critical
+alert opens its system when you are on the board.
 
-A control pulses while a command is pending. Pulse waits for Home Assistant
-to report the new state, with an eight-second limit on the pending indicator.
-If the call fails, it shows the error and a Retry option. Dial commands are
-sent on release; keyboard and wheel changes are sent after a short pause.
+A control pulses while a command is pending. Pulse waits for the home to
+report the new state, with an eight-second limit on the pending indicator.
+If the command fails, it shows the error and a Retry option. Dial commands
+are sent on release; keyboard and wheel changes are sent after a short pause.
 Actions that require a code open a keypad before sending the command; Assist
 opens the same keypad in its words format.
 
-## Sign-in and connection
+## Connection
+
+### Home Assistant
 
 The standalone app uses Home Assistant's login flow. You sign in on Home
 Assistant and return to Pulse; Pulse does not receive your password. Access
@@ -91,21 +121,49 @@ entity updates, loads the registries, subscribes to the persistent
 notifications and reconnects when the connection drops. The card uses the
 dashboard's existing `hass` object instead of opening its own connection.
 
-If Pulse is served over HTTPS, your Home Assistant URL must also use HTTPS.
-Browsers block a connection from an HTTPS page to an HTTP Home Assistant.
-The Home Assistant address must be reachable from the device running Pulse.
+### openHAB
 
-Pulse's interface text is currently English. Numbers and times follow your
-Home Assistant profile's language, and entity states use Home Assistant's
-translated labels where available. Assist answers in the language of your
-Home Assistant; the questions on its ring are asked in English, which every
-installation understands.
+The app reads the REST API: every item with its semantic metadata at start
+and whenever the structure changes, the state changes over the event stream
+(`/rest/events`, read with `fetch` so the token travels with it, batched into
+one repaint every 300 ms, reconnected with a growing wait), commands as
+`POST /rest/items/<name>`, and a day of a point from `/rest/persistence`.
+The home's time zone and the server's version come from `/rest/`. A token
+goes with every request as a Bearer header: one pasted in the panel is kept
+in the browser under `pulse-openhab-token` (prefilled next time; disconnecting
+forgets it) and never put in the address; `?token=` in a link is used as it
+is.
+
+Three ways to reach a server, decided by the build and the URL:
+
+- **Served by openHAB** (`npm run build:openhab`): the page reads
+  `location.origin`, the openHAB that serves it, with no CORS involved. The
+  panel's address field is prefilled with it; another address typed there is
+  read directly and needs CORS on that server.
+- **Direct** (`?server=http://openhab.local:8080`, or the address typed in
+  the panel in development): the browser talks to that openHAB; it needs
+  `org.openhab.cors:enable=true` in its `services/runtime.cfg`.
+- **Through the development server** (the address left empty in
+  development): requests go to `/oh`, which Vite proxies to `OPENHAB_URL` or
+  to `demo.openhab.org`.
+
+If Pulse is served over HTTPS, the server's address must also use HTTPS.
+Browsers block a connection from an HTTPS page to an HTTP server. The
+address must be reachable from the device running Pulse.
+
+Pulse's interface text is English. On Home Assistant, numbers and times
+follow your profile's language and entity states use Home Assistant's
+translated labels; Assist answers in the language of your Home Assistant,
+and the questions on its ring are asked in English, which every installation
+understands. On openHAB, numbers and times follow the browser's language,
+times are told in the home's time zone, and a state uses the words of its
+state description.
 
 ## Settings for each screen
 
 The gear button opens four tabs:
 
-- **Content:** systems, areas, channels and the entity a channel follows.
+- **Content:** systems, rooms, channels and the thing a channel follows.
 - **Board:** view, grouping by system or room, starting system, time display
   and visible layer counts.
 - **Look:** theme or custom colors; the background (flat, a glow, one of the
@@ -113,42 +171,65 @@ The gear button opens four tabs:
   other visual options.
 - **Tuning:** distances and sizes for the rings and layers.
 
-Changes apply immediately and stay in that browser. The standalone app uses
-`pulse-ha-settings` in local storage, so a wall tablet and a phone can show
-different parts of the same home. **Back to defaults** restores the app's
-configured defaults.
+Changes apply immediately and stay in that browser, under
+`pulse-ha-settings` and `pulse-openhab-settings` in local storage, so a wall
+tablet and a phone can show different parts of the same home. **Back to
+defaults** restores the app's configured defaults.
 
 ### Open a specific view from a link
 
-The standalone app reads these URL parameters:
+Both apps read these URL parameters:
 
 | Parameter | Values | Purpose |
 |---|---|---|
-| `systems` | Comma-separated system ids (`lights`, `climate`, `security`, `people`, `openings`, `media`, `energy`, `scenes`, `maintenance`, `assist`) | Limit the available systems |
-| `areas` | Comma-separated Home Assistant area ids | Limit entities to those areas |
+| `systems` | Comma-separated system ids | Limit the available systems |
 | `mode` | `grid`, `orbit`, `layers`, `list` | Set the initial board view |
-| `axis` | `systems`, `rooms` | Group by system or room |
+| `axis` | `systems`, and `rooms` on Home Assistant or `groups` on openHAB | Group by system or by room |
 | `start` | A system id | Open inside that system |
+
+Pulse for Home Assistant (`/`) adds:
+
+| Parameter | Values | Purpose |
+|---|---|---|
+| `areas` | Comma-separated Home Assistant area ids | Limit entities to those areas |
 | `layers` | A positive integer | Set the number of systems stacked in Layers view |
 | `demo` | A demo home id | Use a demo home instead of a live connection |
 | `lang` | A locale tag, such as `es-AR` | Try number and time formatting in the demo |
+
+Its system ids: `lights`, `climate`, `security`, `people`, `openings`,
+`media`, `energy`, `scenes`, `maintenance`, `assist`.
+
+Pulse for openHAB (`/openhab/`) adds:
+
+| Parameter | Values | Purpose |
+|---|---|---|
+| `server` | An openHAB address | Read that openHAB directly (CORS on there) instead of the one serving the page or the proxy |
+| `token` | An API token | Sent with every request; for a kiosk's link. A token pasted in the panel is kept in the browser instead |
+| `demo` | | The recorded demo house instead of a server |
+
+Its system ids: `lights`, `climate`, `openings`, `security`, `media`,
+`energy`, `weather`, `people`.
 
 For example:
 
 ```text
 http://127.0.0.1:5174/?systems=lights,climate&mode=orbit&start=climate&areas=kitchen,living_room
+http://127.0.0.1:5174/openhab/?demo&axis=groups&mode=grid
 ```
 
 Use your own area ids. The systems and areas in the URL limit what settings
 can offer; saved browser preferences can override defaults such as the view.
-When embedding the app through `mountPulse`, `settings: false` hides the
-settings panel.
+When embedding the Home Assistant app through `mountPulse`, `settings: false`
+hides the settings panel.
 
 ## Demo homes
 
-The app includes six homes from demo.home-assistant.io: `home`, `sections`,
-`arsaboo`, `teachingbirds`, `kernehed` and `jimpower`. The `home` and `sections`
-demos have the widest range of controls; the others are mostly sensors.
+### The six of demo.home-assistant.io
+
+The Home Assistant app includes six homes from demo.home-assistant.io:
+`home`, `sections`, `arsaboo`, `teachingbirds`, `kernehed` and `jimpower`.
+The `home` and `sections` demos have the widest range of controls; the
+others are mostly sensors.
 
 The demos simulate service calls in the browser. Lights toggle, covers move,
 locks change state, scenes activate, notices can be dismissed and Assist
@@ -171,6 +252,26 @@ Add `--check` to compare without writing. Update the source checkout and rerun
 the importer rather than editing files in `src/demo/homes/` by hand. Source
 attribution and the Apache 2.0 license are recorded in [src/demo/NOTICE.md](src/demo/NOTICE.md).
 
+### openHAB's demo house
+
+The openHAB app includes the openHAB project's demo house, recorded from
+demo.openhab.org one evening: 233 items with their semantics, a day of
+history for 38 of them, the home's time zone. Played back, the recording is
+moved to now, breathes every three seconds and echoes commands after 400 ms
+by item type: a light turns on, a heating turns off, a speaker pauses. The
+Playwright tests use it to exercise the app without a running openHAB.
+
+The house is recorded again with:
+
+```sh
+node src/openhab/demo/scripts/record.mjs [server]
+```
+
+It writes `src/openhab/demo/recording.json` and the covers of what the
+speakers play as drawn SVGs in `src/openhab/demo/covers/` (the album art is
+copyrighted; the drawing names the album and the artist). Rerun the recorder
+rather than editing the recording by hand.
+
 ## Build and check
 
 ```sh
@@ -179,11 +280,23 @@ npm run lint
 npm test
 npm run build
 npm run build:card
+npm run build:openhab
+npm run pack:openhab
 ```
 
-The app build writes `dist/`, including the app and the demo gallery. The
-card build writes `dist-card/zumer-pulse.js`, with the core, Orbit and Zumly
-bundled and `hls.js` left out (about 810 kB, 190 kB compressed).
+The app build writes `dist/`: both apps and the gallery, for a web server of
+your own. The card build writes `dist-card/zumer-pulse.js`, with the core,
+Orbit and Zumly bundled and `hls.js` left out (about 810 kB, 190 kB
+compressed). The openHAB build writes `dist-openhab/`: the openHAB app alone,
+with relative paths and the same-origin flag on, so that it runs from any
+folder a server exposes; `pack:openhab` zips it as `pulse-openhab.zip` at the
+root, the asset a release attaches next to `zumer-pulse.js`. Neither
+`dist-openhab/` nor the zip is committed.
+
+To try that build as openHAB would serve it, any static server over
+`dist-openhab/` will do. The page then takes that server's origin for its
+openHAB, so expect the connect panel with a "No openHAB answered" line, and
+the demo house behind it.
 
 For card development, open [the card bench](http://127.0.0.1:5174/card.html)
 while `npm run dev` is running. It accepts `home`, `config` (JSON),
@@ -194,31 +307,38 @@ available in development and is excluded from the app build.
 /card.html?home=sections&size=section&config={"systems":["climate"],"start":"climate"}
 ```
 
-The card tests are in [tests/ha.spec.ts](tests/ha.spec.ts). Live app tests
-are in [tests/ha-live.spec.ts](tests/ha-live.spec.ts) and are skipped
-unless `PULSE_HA_TOKENS` points to a tokens file.
+The tests run over the demos, one development server for all:
+[tests/ha.spec.ts](tests/ha.spec.ts) covers the Home Assistant app, the card
+and the gallery; [tests/openhab.spec.ts](tests/openhab.spec.ts) the openHAB
+app. Live Home Assistant tests are in
+[tests/ha-live.spec.ts](tests/ha-live.spec.ts) and are skipped unless
+`PULSE_HA_TOKENS` points to a tokens file.
 
 For local integration work, `scripts/ha-tokens.mjs` creates a tokens file from
 `.env.local`. `scripts/ha-install-card.mjs` registers a dashboard resource and
 creates or updates two test dashboards in Home Assistant;
 `scripts/ha-check-card.mjs` checks them with Playwright and saves screenshots.
-`scripts/record-tour.mjs <dir> [ffmpeg]` records two short videos of the app
-over a demo home with Playwright, for a post or a page: the board (views,
-rooms, themes, backgrounds) and the inside of a system (a dial, a detail, a
-choice, the switches, the month of a meter). With an ffmpeg given (or
-`FFMPEG` set) each comes out as an mp4, otherwise as webm.
+`scripts/record-tour.mjs <dir> [ffmpeg]` records two short videos of the
+Home Assistant app over a demo home with Playwright, for a post or a page:
+the board (views, rooms, themes, backgrounds) and the inside of a system (a
+dial, a detail, a choice, the switches, the month of a meter). With an ffmpeg
+given (or `FFMPEG` set) each comes out as an mp4, otherwise as webm.
 
 ## Troubleshooting
 
-- **The app cannot connect:** check that the Home Assistant URL is reachable
-  from this browser. For an HTTPS Pulse page, use an HTTPS Home Assistant URL.
-- **Only some systems or channels appear:** check for matching entities, area
-  filters and hidden channels in settings. Try **Back to defaults** to clear
-  saved display choices.
+- **The app cannot connect:** check that the server's address is reachable
+  from this browser. For an HTTPS Pulse page, use an HTTPS address. An
+  openHAB at another address than the page's needs CORS on.
+- **Only some systems or channels appear:** check for matching entities or
+  items, area filters and hidden channels in settings. Try **Back to
+  defaults** to clear saved display choices. On openHAB, an item is read only
+  through the semantic model.
 - **A command fails or a dial returns to its old value:** read the error below
-  the object and check the device's state in Home Assistant.
+  the object and check the device's state on the server.
 - **The rings do not render correctly:** try an up-to-date browser or WebView.
   Pulse relies on modern CSS features.
 
-For resource-loading errors, card configuration and dashboard layout issues,
-see the [README's troubleshooting](README.md#troubleshooting).
+For resource-loading errors, card configuration, the folder openHAB serves
+and dashboard layout issues, see the README's troubleshooting for
+[Home Assistant](README.md#troubleshooting) and
+[openHAB](README.md#troubleshooting-1).

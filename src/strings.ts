@@ -61,12 +61,22 @@ export const t = {
   leaveDemo: 'Leave the demo',
   browseHomes: 'See every demo home, with a preview',
 
-  // The index (gallery.html)
+  // The other app of this repo, from the sign-in panel.
+  otherPlatform: 'Your home runs on openHAB? Pulse for openHAB is here.',
+
+  // The index (gallery.html): the two platforms, each in its own words, with the same weight.
   galleryLead: 'Your home, as one object per system. Pick where to look.',
   yourHALead: 'Sign in with your Home Assistant account; the object is built from your own entities.',
+  yourOpenHAB: 'Your openHAB',
+  yourOpenHABLead: 'Connect to your openHAB server; the object is built from your own items and their semantic model.',
+  platformHA: 'Home Assistant',
+  platformOH: 'openHAB',
   demoApp: 'Pulse demo',
   demoAppLead: 'The object over simulated systems: home, car, pet, health and server, with alerts to trigger.',
   demoHomes: 'Demo homes',
-  demoHomesLead: 'The six homes of demo.home-assistant.io, with entities that answer the ring. No Home Assistant needed.',
+  demoHomesLead: 'Homes with devices that answer the ring, no server needed: the six of demo.home-assistant.io, and openHAB’s demo house.',
+  demoHouse: 'Demo house',
+  demoHouseLead: 'The house behind demo.openhab.org: four floors of rooms, a thermostat in each, windows, doors and locks, speakers, solar power and a battery, two people on a map.',
   homeFoot: (entities: number, systems: number) => `${entities} entities in ${systems} ${systems === 1 ? 'system' : 'systems'}`,
+  houseFoot: (items: number, systems: number) => `${items} items in ${systems} ${systems === 1 ? 'system' : 'systems'}`,
 };

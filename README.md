@@ -1,20 +1,32 @@
-# Pulse for Home Assistant
+# Pulse for the home
 
 Pulse shows your home as rings, one per system: lights, climate, security,
-people, openings, media, energy, scenes, maintenance and Assist. Each ring is a
-control: drag it to set the thermostat, tap a segment to switch a light, pick
-a scene by name. When something needs attention, that ring comes to the front
-with its action next to it: a window open while the heating runs, a door
-unlocked with the alarm armed, a battery under 20%. Pulse reads what your Home
-Assistant already has. There is nothing to configure per entity.
+people, openings, media, energy and more. Each ring is a control: drag it to
+set the thermostat, tap a segment to switch a light, pick a scene or a source
+by name. When something needs attention, that ring comes to the front with
+its action next to it: a window open while the heating runs, a door unlocked
+at night, a battery running low. Pulse reads what your home already has.
+There is nothing to configure per device.
 
 ![The board of a home: eight rings around a center that shows the one thing calling, a battery at 15%](docs/images/board-aurora.jpg)
 
-It installs as one dashboard resource, `zumer-pulse.js`, and runs as a
-dashboard of its own, as a card in a dashboard you already have, as a section,
-or on its own in a browser for a wall tablet.
+It runs on a home that Home Assistant looks after, and on one that openHAB
+looks after. Each has its own section here, in its own words, with its own
+way to install; the board you get is the same.
 
-## Requirements
+- [Home Assistant](#home-assistant): one dashboard resource, `zumer-pulse.js`,
+  that runs as a dashboard, as a card, as a section, or on its own.
+- [openHAB](#openhab): one folder, `pulse-openhab.zip`, served by your openHAB
+  at `/static/pulse/`, or on its own.
+- [Demo homes](#demo-homes), [on the board](#on-the-board),
+  [help](#help), [credits](#license-and-credits).
+
+## Home Assistant
+
+Pulse reads the entities Home Assistant already has: lights, climate,
+security, people, openings, media, energy, scenes, maintenance and Assist.
+
+### Requirements
 
 - Home Assistant 2026.10 or newer. Tested on 2026.10.4 and 2026.11.0.
 - A current browser or the Companion app. The rings use modern CSS; old kiosk
@@ -23,9 +35,9 @@ or on its own in a browser for a wall tablet.
   per dashboard. It uses your Home Assistant session; nothing runs on the
   server.
 
-## Install
+### Install
 
-### From the Marketplace
+#### From the Marketplace
 
 Pulse is not in the Marketplace list yet. Until it is, add it by link:
 
@@ -40,7 +52,7 @@ The first time, Home Assistant asks you to connect your GitHub account. That is
 its own step, once, for anything added by link. Once Pulse is listed: search
 **Pulse** in the Marketplace, **Install**, reload.
 
-### By hand
+#### By hand
 
 1. Download `zumer-pulse.js` from the
    [latest release](https://github.com/zumerlab/pulse-home/releases/latest).
@@ -55,9 +67,9 @@ its own step, once, for anything added by link. Once Pulse is listed: search
 After updating the file, change the resource URL to `/local/zumer-pulse.js?v=2`
 (any new value) so browsers and the Companion apps fetch the new one.
 
-## Use it
+### Use it
 
-### As a dashboard
+#### As a dashboard
 
 **Settings › Dashboards › Add dashboard**, and pick **Pulse** under
 *Community dashboards*. Give it a name and an icon. It appears in the sidebar:
@@ -72,7 +84,7 @@ strategy:
   systems: [lights, climate, security, openings]
 ```
 
-### As a card
+#### As a card
 
 Edit the dashboard, **Add card**, search **Pulse**. The editor shows every
 option with a live preview.
@@ -97,7 +109,7 @@ needs a full-width section or a panel.
 
 ![Two Pulse cards in a sections view: one opened inside Climate, one on the layers board](docs/images/sections.png)
 
-### As a section
+#### As a section
 
 A sections view can hold a Pulse section, with the same options as the card.
 The left card of the picture above is this one, Climate on its own:
@@ -121,7 +133,7 @@ views:
 
 In Home Assistant 2026.10, section strategies are configured in YAML.
 
-### On its own
+#### On its own
 
 Pulse also runs by itself in a browser, for a wall tablet, a kiosk or a second
 screen. With Node.js 22.18 or newer installed:
@@ -141,7 +153,7 @@ must be HTTPS too. Without a Home Assistant at hand, pick one of the six demo
 homes. [DEVELOPMENT.md](DEVELOPMENT.md) covers the URL parameters and the
 build.
 
-## Options
+### Options
 
 All optional. They apply to the card, the dashboard and the section alike.
 
@@ -171,61 +183,11 @@ is a list and `start` is a single system id.
 |---|---|---|
 | `background: aurora` | `background: contours` | `background: grain` |
 
-## Settings on the board
-
-The gear button opens four tabs:
-
-- **Content:** systems, areas, channels and the entity a channel follows.
-- **Board:** view, grouping by system or room, starting system, time display
-  and visible layer counts.
-- **Look:** theme or custom colors; the background (flat, a glow, Aurora,
-  Contours, Grain, or a photo) and solid or glass faces over it; dial style
-  and history display.
-- **Tuning:** distances and sizes for the rings and layers.
-
-Changes apply immediately and stay in that browser: a kitchen tablet and a
-phone can show different parts of the same home. **Back to defaults** restores
-the configured defaults; tuning has its own reset.
-
 Settings only offer the systems and areas the configuration allows. Use
 `settings: false` when every screen must follow the configuration. A photo in
 Home Assistant's `www` folder is available as `/local/<filename>`.
 
-## Views
-
-| View | Layout |
-|---|---|
-| Grid | A small ring per system, alerts first |
-| Orbit | Systems around a center that shows the most urgent alert or the recent changes |
-| Layers | Systems stacked as layers; tap a ring to bring it forward, then the center to open it |
-| List | Alerts on an inner ring, the other systems on an outer ring; select a system, then tap the center to open it |
-
-![The orbit view](docs/images/dashboard-orbit.png)
-
-Inside a system, drag a dial to adjust a value, tap a segment to switch a
-device, or choose a mode by name on the ring. Tap a layer behind the active one
-to bring it forward. An alarm that needs a code opens a keypad first.
-
-The detail view adds what the ring cannot show: sensor history, a camera
-feed, color controls, the entities behind a reading. **View flat** shows the
-system as a list.
-
-![Security opened on a jammed lock](docs/images/dashboard-system.png)
-
-An alert comes with an action when there is one: **Retry**, **Disarm**,
-**Close windows**. **Mute** moves an alert behind the active layer and stops
-its wave; it can return if its text changes. A new critical alert opens its
-system while you are on the board.
-
-A control pulses while a command is pending and settles when Home Assistant
-reports the new state. If the service call fails, Pulse shows the error and
-restores the reported value.
-
-| ![Where everyone is, on a map around home](docs/images/people-where.jpg) | ![Assist: the questions on a ring, the answer in the center](docs/images/assist.jpg) |
-|---|---|
-| People: where everyone is. | Assist: ask your home. |
-
-## What each system reads
+### What each system reads
 
 Pulse selects entities by domain, device class and supported controls. A
 system with no matching entities is not drawn; a channel that follows one
@@ -249,7 +211,7 @@ left out. Batteries and tamper sensors are included where relevant. An alert
 names the area of the entity, or of its device, when it has one
 ("Motion · Garden").
 
-## When an alert fires
+### When an alert fires
 
 | Alert | When |
 |---|---|
@@ -268,13 +230,13 @@ names the area of the entity, or of its device, when it has one
 
 The rules are in [src/model.ts](src/model.ts).
 
-## Language
+### Language
 
 The interface is in English. Numbers and times follow your Home Assistant
 profile's language, and entity states use Home Assistant's translated labels
 where it has them. Assist answers in the language of your Home Assistant.
 
-## Troubleshooting
+### Troubleshooting
 
 - **"Custom element doesn't exist: zumer-pulse".** The resource is not loaded:
   check the URL and type under *Resources*, and hard-reload. In the Companion
@@ -301,7 +263,231 @@ where it has them. Assist answers in the language of your Home Assistant.
 - **The standalone app cannot connect.** The Home Assistant address must be
   reachable from that device, and HTTPS if the page is HTTPS.
 
+## openHAB
+
+Pulse reads the items openHAB already has, through your semantic model:
+lights, climate, openings, security, media, energy, weather and people.
+
+### Requirements
+
+- openHAB 3 or newer, with the REST API reachable from the browser (it is, on
+  the same address as Main UI). Tested against openHAB 5.2.
+- A semantic model. Pulse finds things by what they are in the model: a
+  Location (a floor, a room, the garden), an Equipment in it (a light, the
+  HVAC of a room, a window, a lock, a speaker, the inverter) and its Points
+  (a measurement, a setpoint, a switch, a status, an alarm) with the property
+  each is about. Items outside the model are not read, apart from a
+  `Location` item placing someone and a presence switch. **Settings › Model**
+  in Main UI is where items get their tags; a home modeled there is ready.
+- A current browser. The rings use modern CSS.
+- The app is a folder of about 950 kB (265 kB compressed), loaded once. It
+  uses your openHAB's REST API; nothing runs on the server.
+
+### Install
+
+#### Served by openHAB
+
+openHAB serves the files in the `html` folder of its configuration at
+`/static/`. Pulse goes there:
+
+1. Download `pulse-openhab.zip` from the
+   [latest release](https://github.com/zumerlab/pulse-home/releases/latest).
+2. Unzip it into a folder named `pulse` inside `html`, so that `index.html`
+   sits at `html/pulse/index.html`. The `html` folder is next to `items` and
+   `things`: `/etc/openhab/html` on Linux packages and openHABian,
+   `conf/html` in a manual install, the `conf` volume with Docker.
+3. Open `http://openhab.local:8080/static/pulse/` (your openHAB's address).
+   No restart needed.
+
+The page reads the openHAB that serves it, nothing to point anywhere. By
+default openHAB answers reads and commands without signing in (the *implicit
+user role*, under **Settings › API Security**). If you switched that off, create an API token in your profile (**Create new API
+token**) and paste it in the panel once; that browser keeps it until you
+disconnect.
+
+To have Pulse in Main UI's sidebar, add a page: **Settings › Pages › Create
+layout page**, one **Web Frame** widget with the URL `/static/pulse/`, full
+height.
+
+After updating the folder, hard-reload the page once.
+
+#### On its own
+
+Pulse also runs by itself in a browser, for a wall tablet or a second screen,
+from this repository. With Node.js 22.18 or newer installed:
+
+```sh
+git clone https://github.com/zumerlab/pulse-home.git
+cd pulse-home
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:5174/openhab/` and enter the address of your openHAB.
+To be read from another address, openHAB needs CORS switched on: in
+`services/runtime.cfg`, the line `org.openhab.cors:enable=true`, then a
+restart of openHAB. Without that, let the development server fetch for you:
+
+```sh
+OPENHAB_URL=http://openhab.local:8080 npm run dev
+```
+
+and leave the address empty. Left empty with nothing set, the page reads
+openHAB's own public demo house, `demo.openhab.org`, through the development
+server. If the page is served over HTTPS, the openHAB address must be HTTPS
+too. Without an openHAB at hand, open the demo house: it is the same house,
+recorded one evening, and it answers your taps.
+
+### Use it
+
+The board opens on the whole home. A link can fix what a screen shows; the
+gear chooses within that:
+
+| Parameter | Values | Purpose |
+|---|---|---|
+| `server` | `http://openhab.local:8080` | Which openHAB, when it is not the one serving the page (CORS on there) |
+| `token` | An API token | Sent with every request; for a kiosk's link. A token pasted in the panel instead stays in that browser, never in the address |
+| `systems` | Comma-separated ids: `lights`, `climate`, `openings`, `security`, `media`, `energy`, `weather`, `people` | Limit the available systems |
+| `mode` | `grid`, `orbit`, `layers`, `list` | Initial board view |
+| `axis` | `systems`, `groups` | By system, or by room: each Location of your model is one object, floor by floor |
+| `start` | A system id | Open inside that system |
+| `demo` | | The recorded demo house instead of a server |
+
+For example: `http://openhab.local:8080/static/pulse/?systems=lights,climate&mode=orbit&start=climate`.
+
+### What each system reads
+
+Pulse selects items by their semantic class and the property they relate to.
+A system with nothing matching is not drawn; a channel that follows one item
+takes that item's label, or its room's.
+
+| System | Items and controls |
+|---|---|
+| Lights | Every `Equipment_LightSource` (a Switch, Dimmer or Color item, or an equipment with such a Control point): a tap toggles. The dimmable light chosen as a brightness dial, with its color when it has one |
+| Climate | The `Equipment_HVAC` of each room: its temperature Measurement, its temperature Setpoint as the thermostat's dial, its heating and air-conditioning switches (Control points with the Heating and Airconditioning properties). A segment per room on the Heating and Cooling rings; the coldest room with its day; the room's windows on the thermostat's timeline |
+| Openings | `Equipment_Window` and `Equipment_Door` with a Contact (an Opening status point, or the equipment itself), `Equipment_WindowCovering` Rollershutters (lowered is on; a tap raises or lowers; the one chosen as a dial) |
+| Security | `Equipment_Lock` switches (ON is locked, as openHAB's own words say; a tap toggles); the Alarm points of your devices (smoke, water, gas), not a weather service's |
+| Media | `Equipment_AudioVisual` with a Player point: play and pause from the ring, the cover from its Image point, the volume Setpoint as a dial, a String Control point with options as the input ring |
+| Energy | `Equipment_EnergyManagementSystem`: its Power points (load, grid, battery, solar), its state of charge in percent, its daily energies in kWh with the day's forecast; `Equipment_PowerSupply` (an inverter): its powers, by plane when it tells them apart |
+| Weather | `Equipment_WebService_WeatherService`: temperature on the band, humidity, wind (its direction as the arrow) and condition in words, its Alarm point as a warning by severity; the sun from an Astro equipment's elevation and azimuth (Number:Angle) and its sunrise and sunset times, in the home's time zone |
+| People | Every `Location` item with a position, on a map; each person opens on their own. A Switch about Presence (or named so) as who is home |
+
+The day rings and the timelines read your persistence service
+(`/rest/persistence`): rrd4j keeps the numbers and the switches by default; an
+item nobody persists shows no day. Night, for the rules, is the sun below the
+horizon when your home computes it.
+
+### When an alert fires
+
+| Alert | When |
+|---|---|
+| Heating with the window open | a room's heating is on **and** a window of that room is open. Its action turns that heating off |
+| Cold room | a room under 16 °C |
+| Door open at night | a door's contact is open **and** the sun is below the horizon |
+| Unlocked at night | a lock is off **and** the sun is below the horizon. Its action locks |
+| Alarm | an Alarm point of a device is on or open (critical) |
+| High draw | more than 4 kW from the grid |
+| Home battery low | the state of charge under 15% |
+| Weather warning | the weather service's alarm is on; critical when its severity says extreme or severe |
+
+The rules are in [src/openhab/model.ts](src/openhab/model.ts).
+
+### Language
+
+The interface is in English. Numbers and times follow your browser's language;
+times are told in your home's time zone, the one openHAB reports. An item's
+state uses the words its state description gives it (a lock's "locked" and
+"unlocked", a receiver's inputs).
+
+### Troubleshooting
+
+- **"No openHAB answered at…".** Served by openHAB, the page reads its own
+  address: check that `/rest/` answers there. Read from another address, that
+  openHAB needs CORS switched on (see *On its own*) and must be reachable from
+  the device, HTTPS if the page is HTTPS.
+- **"This openHAB asks for an API token".** The implicit user role is off.
+  Create a token in your profile and paste it in the panel; or switch the
+  role on under **Settings › API Security**.
+- **Only some systems appear, or a thing is missing.** Pulse reads the
+  semantic model: an item outside it, or an equipment without the point
+  Pulse looks for (a window with no Contact, an HVAC with no Setpoint), is not
+  drawn. Tag it under **Settings › Model**.
+- **No day in a detail, an empty timeline.** That item is not persisted. Add
+  it to your persistence strategy (rrd4j persists numbers by default; a
+  contact or a light needs a strategy of its own).
+- **A room is missing from the rooms axis.** Rooms are the Locations of your
+  model; a room is on a floor when it is part of one. What is in no room is
+  under "The rest of the house".
+- **A command does nothing.** The page tells you what openHAB answered: an
+  item that does not take that command, or a server that refused it. The
+  state comes back from the server, never assumed.
+
+## Demo homes
+
+No server at hand? Each panel opens a demo, and
+[the index](http://127.0.0.1:5174/gallery.html) of the development server
+previews them all with the rings they fill: the six homes of
+demo.home-assistant.io, and openHAB's demo house as it was one evening, with
+the heating on in the living room while its window was open, the garage open
+and unlocked at night, and a speaker playing. They answer your taps in the
+browser.
+
+## On the board
+
+### Settings
+
+The gear button opens four tabs:
+
+- **Content:** systems, rooms, channels and the thing a channel follows.
+- **Board:** view, grouping by system or room, starting system, time display
+  and visible layer counts.
+- **Look:** theme or custom colors; the background (flat, a glow, Aurora,
+  Contours, Grain, or a photo) and solid or glass faces over it; dial style
+  and history display.
+- **Tuning:** distances and sizes for the rings and layers.
+
+Changes apply immediately and stay in that browser: a kitchen tablet and a
+phone can show different parts of the same home. **Back to defaults** restores
+the configured defaults; tuning has its own reset.
+
+### Views
+
+| View | Layout |
+|---|---|
+| Grid | A small ring per system, alerts first |
+| Orbit | Systems around a center that shows the most urgent alert or the recent changes |
+| Layers | Systems stacked as layers; tap a ring to bring it forward, then the center to open it |
+| List | Alerts on an inner ring, the other systems on an outer ring; select a system, then tap the center to open it |
+
+![The orbit view](docs/images/dashboard-orbit.png)
+
+Inside a system, drag a dial to adjust a value, tap a segment to switch a
+device, or choose a mode by name on the ring. Tap a layer behind the active one
+to bring it forward. An alarm that needs a code opens a keypad first.
+
+The detail view adds what the ring cannot show: sensor history, a picture,
+color controls, the things behind a reading. **View flat** shows the system
+as a list.
+
+![Security opened on a jammed lock](docs/images/dashboard-system.png)
+
+An alert comes with an action when there is one: **Retry**, **Disarm**,
+**Turn off heating**. **Mute** moves an alert behind the active layer and
+stops its wave; it can return if its text changes. A new critical alert opens
+its system while you are on the board.
+
+A control pulses while a command is pending and settles when your home
+reports the new state. If the command fails, Pulse shows the error and
+restores the reported value.
+
+| ![Where everyone is, on a map around home](docs/images/people-where.jpg) | ![Assist: the questions on a ring, the answer in the center](docs/images/assist.jpg) |
+|---|---|
+| People: where everyone is. | Assist, on Home Assistant: ask your home. |
+
+## Help
+
 Questions and ideas: [issues](https://github.com/zumerlab/pulse-home/issues).
+Say which platform you are on.
 
 ## Development
 
@@ -314,8 +500,11 @@ Pulse is free and open source, [MIT](LICENSE), by
 [ZumerLab](https://zumerlab.com). The object itself is
 [`@zumer/pulse`](https://github.com/zumerlab/pulse), built on
 [Orbit](https://zumerlab.com/orbit/) (the rings and the layers) and
-[Zumly](https://zumerlab.com/zumly/) (the zoom), both bundled in the file;
+[Zumly](https://zumerlab.com/zumly/) (the zoom), both bundled in;
 Pulse comes from [zircle-ui](https://github.com/zircleUI/zircleUI), an earlier
-library of zoomable interfaces. The demo homes are those of
+library of zoomable interfaces. The Home Assistant demo homes are those of
 demo.home-assistant.io, from the Home Assistant frontend (Apache 2.0, see
-[src/demo/NOTICE.md](src/demo/NOTICE.md)).
+[src/demo/NOTICE.md](src/demo/NOTICE.md)). The openHAB demo house is the
+openHAB project's own demo, as it stood on demo.openhab.org one evening in
+November 2026; the covers of what its speakers play are drawn, not the
+albums' art.

@@ -1,5 +1,6 @@
 import { ASSIST, emptyRegistry, type Answer, type Call, type HassState, type Notice, type Registry, type States } from './source.ts';
-import { listOf, localeOf, num, type Alert, type CodeFormat, type GeoPlot, type Reading, type Seg, type TrackSpec } from '@zumer/pulse';
+import { listOf, num, type Alert, type CodeFormat, type GeoPlot, type Reading, type Seg, type TrackSpec } from '@zumer/pulse';
+import { distanceKm, forText, hourText, zoomFor } from './shared.ts';
 
 // Every channel is read from Home Assistant's live state: there are no
 // hand-written "ok" and "alert" states. An alert comes out of a rule over the
@@ -283,17 +284,9 @@ const isHome = (st: string) => st === AT_HOME;
 const whereabouts = (e: HassState) => e.state === AT_HOME ? 'home' : e.state === 'not_home' ? 'away' : ['unknown', 'unavailable'].includes(e.state) ? 'unknown' : e.state;
 const geo = (e: HassState | undefined) => { const lat = e && attr(e, 'latitude'), lon = e && attr(e, 'longitude'); return lat != null && lon != null ? { lat, lon } : null; };
 const homeAt = (s: States) => geo(s.get('zone.home'));
-const distanceKm = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) => {
-  const d = Math.PI / 180, h = Math.sin(((b.lat - a.lat) * d) / 2) ** 2 + Math.cos(a.lat * d) * Math.cos(b.lat * d) * Math.sin(((b.lon - a.lon) * d) / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
-};
 const midpoint = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) => ({ lat: (a.lat + b.lat) / 2, lon: (a.lon + b.lon) / 2 });
 // A tile zoom that holds `km` across the disc around a latitude: a street at 16, a region at 8.
-const zoomFor = (lat: number, km: number) => Math.max(3, Math.min(16, Math.floor(Math.log2((140 * 156.543 * Math.cos((lat * Math.PI) / 180)) / Math.max(0.25, km)))));
 const kmText = (d: number) => `${num(d, d < 10 ? 1 : 0)} km`;
-// How long something has been as it is: "40 min", "3 h", "2 days".
-const forText = (ms: number) => { const h = Math.max(0, ms) / 3_600_000; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`; };
-const hourText = (at: number) => new Date(at).toLocaleTimeString(localeOf(), { hour: '2-digit', minute: '2-digit' });
 // The people of the home: its persons, and the device trackers no person
 // follows (a car, a phone with no person); a router's sightings only when
 // there is nothing else.

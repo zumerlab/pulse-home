@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Pulse for Home Assistant: the standalone app, the zumer-pulse card and the dashboard and section strategies, over a live Home Assistant or the demo homes.",
+  "description": "Pulse for the home: Home Assistant (the standalone app, the zumer-pulse card and the dashboard and section strategies) and openHAB (the app, served from openHAB itself), over a live home or the demo homes.",
   "license": "MIT",
   "engines": {
     "node": "^22.18.0 || >=24.0.0"
@@ -13,6 +13,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 5174",
     "build:card": "vite build -c vite.card.config.ts",
+    "build:openhab": "vite build -c vite.openhab.config.ts",
+    "pack:openhab": "npm run build:openhab && cd dist-openhab && zip -qr ../pulse-openhab.zip .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
