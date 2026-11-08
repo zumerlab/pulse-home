@@ -1,6 +1,6 @@
 {
   "name": "pulse-home",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Pulse for the home: Home Assistant (the standalone app, the zumer-pulse card and the dashboard and section strategies) and openHAB (the app, served from openHAB itself), over a live home or the demo homes.",
