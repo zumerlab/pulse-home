@@ -18,9 +18,11 @@ export const t = {
   // Connecting
   connectLead: 'Your home, as one object per system. Connect to your openHAB to begin.',
   serverField: 'Your openHAB',
-  // Served by openHAB itself: this server; elsewhere: an address, or the demo house through this page's server.
+  // Served by openHAB itself: this server; in development: an address, or the demo house through this page's
+  // server; on a plain host with nothing behind it: an address alone.
   serverHintHere: 'This openHAB, the one serving this page. Another one needs CORS switched on in its API settings.',
   serverHintAway: (demo: string) => `Its address, with CORS switched on in its API settings. Left empty, this page’s server reads ${demo} for you.`,
+  serverHintHosted: (secure: boolean) => `Its address, with CORS switched on in its API settings${secure ? ' and over HTTPS, as this page is' : ''}.`,
   tokenField: 'API token, only if it asks for one',
   tokenHint: 'Made in openHAB under your profile, “Create new API token”. Not needed while the implicit user role is on.',
   connect: 'Connect',

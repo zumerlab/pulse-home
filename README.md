@@ -12,7 +12,8 @@ There is nothing to configure per device.
 
 It runs on a home that Home Assistant looks after, and on one that openHAB
 looks after. Each has its own section here, in its own words, with its own
-way to install; the board you get is the same.
+way to install; the board you get is the same. To see it first, the
+[demo homes](https://zumerlab.com/pulse-home/gallery.html) are online.
 
 - [Home Assistant](#home-assistant): one dashboard resource, `zumer-pulse.js`,
   that runs as a dashboard, as a card, as a section, or on its own.
@@ -150,7 +151,9 @@ in. You sign in on Home Assistant's own page, so Pulse never sees your
 password. For a kiosk, paste a long-lived access token instead (your profile,
 **Security**). If the page is served over HTTPS, the Home Assistant address
 must be HTTPS too. Without a Home Assistant at hand, pick one of the six demo
-homes. [DEVELOPMENT.md](DEVELOPMENT.md) covers the URL parameters and the
+homes. The same page is online at
+[zumerlab.com/pulse-home](https://zumerlab.com/pulse-home/), with nothing to
+install. [DEVELOPMENT.md](DEVELOPMENT.md) covers the URL parameters and the
 build.
 
 ### Options
@@ -336,7 +339,10 @@ and leave the address empty. Left empty with nothing set, the page reads
 openHAB's own public demo house, `demo.openhab.org`, through the development
 server. If the page is served over HTTPS, the openHAB address must be HTTPS
 too. Without an openHAB at hand, open the demo house: it is the same house,
-recorded one evening, and it answers your taps.
+recorded one evening, and it answers your taps. The same page is online at
+[zumerlab.com/pulse-home/openhab](https://zumerlab.com/pulse-home/openhab/):
+it opens the demo house, and reads an openHAB of yours by its address, with
+CORS on and over HTTPS.
 
 ### Use it
 
@@ -424,13 +430,14 @@ state uses the words its state description gives it (a lock's "locked" and
 
 ## Demo homes
 
-No server at hand? Each panel opens a demo, and
-[the index](http://127.0.0.1:5174/gallery.html) of the development server
-previews them all with the rings they fill: the six homes of
-demo.home-assistant.io, and openHAB's demo house as it was one evening, with
-the heating on in the living room while its window was open, the garage open
-and unlocked at night, and a speaker playing. They answer your taps in the
-browser.
+No server at hand? The demo homes are online at
+[zumerlab.com/pulse-home/gallery.html](https://zumerlab.com/pulse-home/gallery.html),
+previewed with the rings they fill: the six homes of demo.home-assistant.io,
+and openHAB's demo house as it was one evening, with the heating on in the
+living room while its window was open, the garage open and unlocked at night,
+and a speaker playing. They answer your taps in the browser. Each panel opens
+one too, and [the index](http://127.0.0.1:5174/gallery.html) of the
+development server is the same page.
 
 ## On the board
 

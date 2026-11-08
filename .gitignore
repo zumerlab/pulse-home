@@ -10,6 +10,7 @@ test-results/
 playwright-report/
 dist-card/
 dist-openhab/
+dist-pages/
 pulse-openhab.zip
 .claude/
 CLAUDE.md

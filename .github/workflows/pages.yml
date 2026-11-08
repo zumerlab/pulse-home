@@ -1,0 +1,87 @@
+# The public demo at zumerlab.com/pulse-home/: both apps and the gallery
+# (`npm run build:pages`, dist-pages/) on GitHub Pages. The core is read live
+# from a checkout of zumerlab/pulse beside this one, as vite.shared.ts does on a
+# desk, so the page follows the core's main as well as this repo's: on every
+# push here, each night when either repo moved, and by hand from the Actions tab.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # The nightly run goes on only when one of the two repos moved since the page went up:
+  # the page keeps the two commits it was built from in version.txt.
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      fresh: ${{ steps.compare.outputs.fresh }}
+      stamp: ${{ steps.compare.outputs.stamp }}
+    steps:
+      - id: compare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          core="$(gh api repos/zumerlab/pulse/commits/main --jq .sha)"
+          stamp="pulse-home $GITHUB_SHA pulse $core"
+          live="$(curl -fsSL https://zumerlab.com/pulse-home/version.txt || true)"
+          echo "stamp=$stamp" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$stamp" = "$live" ]; then
+            echo "fresh=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "fresh=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.fresh == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: pulse-home
+      - uses: actions/checkout@v7
+        with:
+          repository: zumerlab/pulse
+          path: pulse
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pulse-home/package-lock.json
+      - run: npm ci
+        working-directory: pulse-home
+      - run: npm run build:pages
+        working-directory: pulse-home
+      - run: echo "$STAMP" > pulse-home/dist-pages/version.txt
+        env:
+          STAMP: ${{ needs.check.outputs.stamp }}
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: pulse-home/dist-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

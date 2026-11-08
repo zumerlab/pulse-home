@@ -134,7 +134,7 @@ in the browser under `pulse-openhab-token` (prefilled next time; disconnecting
 forgets it) and never put in the address; `?token=` in a link is used as it
 is.
 
-Three ways to reach a server, decided by the build and the URL:
+Four ways to reach a server, decided by the build and the URL:
 
 - **Served by openHAB** (`npm run build:openhab`): the page reads
   `location.origin`, the openHAB that serves it, with no CORS involved. The
@@ -146,6 +146,10 @@ Three ways to reach a server, decided by the build and the URL:
 - **Through the development server** (the address left empty in
   development): requests go to `/oh`, which Vite proxies to `OPENHAB_URL` or
   to `demo.openhab.org`.
+- **On a plain host** (`npm run build:pages`, what zumerlab.com/pulse-home/
+  serves): no openHAB behind the page and no proxy. The house as recorded
+  opens by itself; an address typed in the panel (required there) is read
+  directly, with CORS on that server and over HTTPS when the page is.
 
 If Pulse is served over HTTPS, the server's address must also use HTTPS.
 Browsers block a connection from an HTTPS page to an HTTP server. The
@@ -282,6 +286,7 @@ npm run build
 npm run build:card
 npm run build:openhab
 npm run pack:openhab
+npm run build:pages
 ```
 
 The app build writes `dist/`: both apps and the gallery, for a web server of
@@ -290,8 +295,15 @@ Orbit and Zumly bundled and `hls.js` left out (about 810 kB, 190 kB
 compressed). The openHAB build writes `dist-openhab/`: the openHAB app alone,
 with relative paths and the same-origin flag on, so that it runs from any
 folder a server exposes; `pack:openhab` zips it as `pulse-openhab.zip` at the
-root, the asset a release attaches next to `zumer-pulse.js`. Neither
-`dist-openhab/` nor the zip is committed.
+root, the asset a release attaches next to `zumer-pulse.js`. The pages build
+writes `dist-pages/`: both apps and the gallery with relative paths, no
+openHAB target and no proxy, for a plain static host. It is what
+[the Pages workflow](.github/workflows/pages.yml) publishes at
+zumerlab.com/pulse-home/ on every push to `main`, and each night when this
+repo or the core moved (the page keeps the two commits it was built from in
+`version.txt`): it checks out `zumerlab/pulse` beside this one, so
+`vite.shared.ts` reads the core live, as on a desk. None of `dist-openhab/`,
+the zip and `dist-pages/` is committed.
 
 To try that build as openHAB would serve it, any static server over
 `dist-openhab/` will do. The page then takes that server's origin for its

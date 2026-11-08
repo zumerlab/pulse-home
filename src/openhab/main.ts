@@ -13,14 +13,19 @@ import { t } from './strings.ts';
 // Pulse for openHAB: the object over an openHAB server, with the connect
 // panel in front while nothing answers. Where the page runs decides where it
 // looks by default: served by openHAB itself (the build in conf/html, same
-// origin as the REST API) it reads that openHAB; in development or on any
-// other host, the demo house through this page's server. `?server=` names
-// another openHAB, read directly (CORS on there); `?token=` goes along, for a
-// kiosk's link (one pasted in the panel stays in the browser instead); `?demo`
-// opens the house as recorded.
+// origin as the REST API) it reads that openHAB; in development, the demo
+// house through this page's server; on a plain host with nothing behind it
+// (the pages build, zumerlab.com/pulse-home/openhab/), the house as recorded.
+// `?server=` names another openHAB, read directly (CORS on there); `?token=`
+// goes along, for a kiosk's link (one pasted in the panel stays in the browser
+// instead); `?demo` opens the house as recorded.
 
 const HERE = __OPENHAB_SAME_ORIGIN__;
 const TARGET = HERE ? location.origin : __OPENHAB_TARGET__;
+// No openHAB behind the page and no proxy: a server is reached by its address alone.
+const HOSTED = !HERE && !TARGET;
+// An HTTPS page reaches only an HTTPS openHAB; the browser blocks the rest.
+const SECURE = location.protocol === 'https:';
 const shell = document.querySelector<HTMLElement>('.shell')!;
 const canvas = document.querySelector<HTMLElement>('#canvas')!;
 const loginSlot = document.querySelector<HTMLElement>('#login')!;
@@ -28,7 +33,8 @@ const query = new URLSearchParams(location.search);
 const demo = new DemoSource();
 const restSource = (server: string, token: string) =>
   server ? new RestSource(server, token) : HERE ? new RestSource('', token, location.origin) : new RestSource(PROXY, token, TARGET);
-let source: HouseSource = query.has('demo') ? demo : restSource(query.get('server') ?? (HERE ? '' : lastServer()), query.get('token') ?? lastToken());
+const server = query.get('server') ?? (HERE ? '' : lastServer());
+let source: HouseSource = query.has('demo') || (HOSTED && !server) ? demo : restSource(server, query.get('token') ?? lastToken());
 
 function status() {
   return `<span class="conn conn-${source.status}"><span class="conn-dot"></span>${esc(source.label)} · ${t.status[source.status]}
@@ -79,12 +85,12 @@ function disconnect() {
 let previewing = 0;
 function paintConnect() {
   const url = source instanceof RestSource && source.direct ? source.base : HERE ? location.origin : lastServer();
-  loginSlot.innerHTML = `<form class="login" novalidate>
+  loginSlot.innerHTML = `<form class="login"${HOSTED ? '' : ' novalidate'}>
     <div class="login-main">
       <h1>Pulse</h1>
       <p class="login-lead">${t.connectLead}</p>
-      <label>${t.serverField}<input name="url" type="url" inputmode="url" autocomplete="url" value="${esc(url)}" placeholder="${esc(HERE ? location.origin : 'http://openhab.local:8080')}"></label>
-      <p class="login-hint">${HERE ? t.serverHintHere : t.serverHintAway(TARGET.replace(/^https?:\/\//, ''))}</p>
+      <label>${t.serverField}<input name="url" type="url" inputmode="url" autocomplete="url"${HOSTED ? ' required' : ''} value="${esc(url)}" placeholder="${esc(HERE ? location.origin : SECURE ? 'https://openhab.example.com' : 'http://openhab.local:8080')}"></label>
+      <p class="login-hint">${HERE ? t.serverHintHere : HOSTED ? t.serverHintHosted(SECURE) : t.serverHintAway(TARGET.replace(/^https?:\/\//, ''))}</p>
       <label>${t.tokenField}<input name="token" type="password" autocomplete="off" spellcheck="false" value="${esc(lastToken())}"></label>
       <p class="login-hint">${t.tokenHint}</p>
       <button type="submit" class="primary">${t.connect}</button>

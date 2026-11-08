@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default [
-  { ignores: ['**/dist/**', '**/dist-card/**', '**/dist-openhab/**', 'test-results/**', 'playwright-report/**'] },
+  { ignores: ['**/dist/**', '**/dist-card/**', '**/dist-openhab/**', '**/dist-pages/**', 'test-results/**', 'playwright-report/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   // Node scripts (the Home Assistant development helpers, the openHAB recorder).
