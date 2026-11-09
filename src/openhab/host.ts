@@ -14,8 +14,9 @@ const LOGGED = /^(Switch|Contact|Player|String|Rollershutter|Dimmer|Color)$/;
 
 export function hostOf(src: HouseSource): PulseHost {
   // The model's indexes over the items, rebuilt when the set of items changes.
-  let house: House = houseOf(src.items, src.timezone), built = src.structure;
-  const h = () => { if (src.structure !== built) { house = houseOf(src.items, src.timezone); built = src.structure; } return house; };
+  const want = src.want?.bind(src);
+  let house: House = houseOf(src.items, src.timezone, want), built = src.structure;
+  const h = () => { if (src.structure !== built) { house = houseOf(src.items, src.timezone, want); built = src.structure; } return house; };
   const bind = (sys: HouseSystem): System => ({
     id: sys.id, title: sys.title,
     channels: sys.channels.map((ch) => ({ key: ch.key, name: ch.name, glyph: ch.glyph, read: (ctx: ReadContext) => { const c: Context = { rooms: ctx.groups, picks: ctx.picks }; return ch.read(h(), c); } })),

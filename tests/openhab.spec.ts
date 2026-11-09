@@ -1,13 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
-import { HA } from '../playwright.config.ts';
+import { HA, OPENHAB_SERVER } from '../playwright.config.ts';
 
 const OPENHAB = `${HA}/openhab/`;
 
 // Pulse for openHAB without a server: the connect panel, and the recorded house
 // (openHAB's demo house one evening: the heating on in the living room with
 // its window open, the garage door open and both locks unlocked at night, the
-// office speaker playing), answering the commands in the browser. A real
-// server is not part of the suite.
+// office speaker playing), answering the commands in the browser. The live
+// path is read against a stand-in of openHAB's API over the same house
+// (tests/openhab-server.mjs); a real server is not part of the suite.
 
 const current = (page: Page) => page.locator('.z-view.is-current-view');
 
@@ -134,4 +135,39 @@ test('on the rooms axis the eighteen rooms climb to their floors, each floor an 
   await expect(current(page).locator('.layer-front .face-name')).toHaveText('Lights');
   await expect(current(page).locator('.layer-front .face-big')).toHaveText('5 of 7');
   await expect(current(page).locator('.layer-front o-arc[data-seg]')).toHaveCount(7);
+});
+
+// What the stand-in server was asked: the lists (by which fields), the states read alone, the items the stream follows, the commands.
+type Asked = { items: { fields: string[] | null; bytes: number }[]; states: string[]; tracked: number; commands: { item: string; command: string }[] };
+const asked = async () => (await (await fetch(`${OPENHAB_SERVER}/_asked`)).json()) as Asked;
+
+test('a server is read light: the items without their states, every state over the stream, a cover only when looked at, a command echoed', async ({ page }) => {
+  await fetch(`${OPENHAB_SERVER}/_reset`, { method: 'POST' });
+  await page.goto(`${OPENHAB}?server=${encodeURIComponent(OPENHAB_SERVER)}`);
+  await expect(page.locator('.conn')).toContainText(`${OPENHAB_SERVER.replace(/^https?:\/\//, '')} · openHAB 5.2.1 · live`);
+  await expect(page.locator('.tile[data-system]')).toHaveCount(8);
+  await expect(page.locator('.board h1')).toContainText('3 things calling');
+  await expect(page.locator('.tile[data-system="media"] .tile-big')).toHaveText('1 of 3');
+  // One list, asked by field with the states left out (the stream told them, every item's). Of the three
+  // Image items only the cover shown, the playing speaker's, was read, alone and once.
+  let a = await asked();
+  expect(a.items).toHaveLength(1);
+  expect(a.items[0].fields).toContain('metadata');
+  expect(a.items[0].fields).not.toContain('state');
+  expect(a.items[0].bytes).toBeLessThan(120_000);
+  expect(a.tracked).toBe(233);
+  expect(a.states).toEqual(['Office_Speaker_Cover']);
+  // Inside Media that cover is on the face, from that one read.
+  await page.locator('.tile[data-system="media"]').click();
+  const front = current(page).locator('.layer-front');
+  await expect(front.locator('.face-image')).toHaveAttribute('src', /^data:image\/svg\+xml;base64,/);
+  await expect(front.locator('.face-label')).toHaveText('Heavy Is The Crown · Linking Park');
+  a = await asked();
+  expect(a.states).toEqual(['Office_Speaker_Cover']);
+  // Paused from the ring: the command goes to the server; its answer comes back on the stream.
+  await front.locator('o-arc[data-seg][aria-label="Office Speaker"]').dispatchEvent('click');
+  await expect(current(page).locator('.layer-front .face-big')).toHaveText('Silence');
+  a = await asked();
+  expect(a.commands).toEqual([{ item: 'Office_Speaker_Playback', command: 'PAUSE' }]);
+  expect(a.items).toHaveLength(1);
 });

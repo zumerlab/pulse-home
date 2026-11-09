@@ -1,9 +1,13 @@
 // What the UI needs from an openHAB server, and the implementation over its
-// REST API: every item with its semantics once, then the stream of state
-// changes (server-sent events); a command POSTed to an item for what the home
-// can be told; persistence for a day of a point. The object (@zumer/pulse)
-// never sees this: `model.ts` turns the items into readings and `host.ts`
-// wraps it as the board's host.
+// REST API: every item with its semantics once, without its state (a thousand
+// items are a few hundred kilobytes that way; with their states, each Image
+// item inlines its picture, a camera's snapshot megabytes, and a big home is
+// tens of megabytes at every load); then the states over openHAB's state
+// stream (server-sent events, the one Main UI reads): all of them at once,
+// then each change; an Image's picture only when it is looked at; a command
+// POSTed to an item for what the home can be told; persistence for a day of a
+// point. The object (@zumer/pulse) never sees this: `model.ts` turns the items
+// into readings and `host.ts` wraps it as the board's host.
 
 import type { Action, HistoryRow, Status } from '@zumer/pulse';
 import { t } from './strings.ts';
@@ -14,7 +18,9 @@ import { t } from './strings.ts';
 export type Semantics = { value: string; config?: { relatesTo?: string; isPointOf?: string; hasLocation?: string; isPartOf?: string } };
 export type Option = { value: string; label: string };
 // An item as the model reads it. The state is text as openHAB gives it: 'ON',
-// '21.2 °C', '257,91,0' (a color's hue, saturation, brightness), 'NULL'.
+// '21.2 °C', '257,91,0' (a color's hue, saturation, brightness), 'NULL'. An
+// Image's is its picture (a data URI) once read; before that, 'NULL' or the
+// stream's line about its bytes, which is not a picture.
 export type Item = {
   name: string; type: string; label: string; state: string; unit?: string;
   tags: string[]; groups: string[]; semantics?: Semantics;
@@ -41,23 +47,28 @@ export interface HouseSource {
   act(a: Act): Promise<unknown>;
   // Rows of (state, when) for the last `hours` hours of these items, where the server persists them.
   history(names: string[], hours: number): Promise<Record<string, HistoryRow[]>>;
+  // The viewer is looking at this item: what the first load left out (an Image's picture) is read now.
+  want?(name: string): void;
   start(): void;
   stop(): void;
 }
 
-// The REST API's item (`/rest/items?metadata=semantics`), the fields read.
+// The REST API's item (`/rest/items?metadata=semantics`), the fields read. The state is among them only
+// when asked for (the recorder asks; the app leaves it to the stream).
 export type ItemDto = {
-  name: string; type: string; label?: string; state: string; unitSymbol?: string; tags?: string[]; groupNames?: string[];
+  name: string; type: string; label?: string; state?: string; unitSymbol?: string; tags?: string[]; groupNames?: string[];
   lastStateChange?: number; lastStateUpdate?: number;
   metadata?: { semantics?: Semantics };
   stateDescription?: { pattern?: string; readOnly?: boolean; options?: Option[] };
   commandDescription?: { commandOptions?: { command: string; label?: string }[] };
 };
+// The fields the app asks the list for, by name (`fields=`), so that the states stay out of it.
+export const FIELDS = 'name,type,label,tags,groupNames,unitSymbol,metadata,stateDescription,commandDescription,lastStateChange,lastStateUpdate';
 export function itemOf(d: ItemDto): Item {
   const options = d.stateDescription?.options?.length ? d.stateDescription.options
     : d.commandDescription?.commandOptions?.map((o) => ({ value: o.command, label: o.label ?? o.command }));
   return {
-    name: d.name, type: d.type, label: d.label ?? '', state: d.state, unit: d.unitSymbol || undefined, tags: d.tags ?? [], groups: d.groupNames ?? [],
+    name: d.name, type: d.type, label: d.label ?? '', state: d.state ?? 'NULL', unit: d.unitSymbol || undefined, tags: d.tags ?? [], groups: d.groupNames ?? [],
     semantics: d.metadata?.semantics, options: options?.length ? options : undefined, pattern: d.stateDescription?.pattern, readOnly: d.stateDescription?.readOnly,
     changedAt: d.lastStateChange, updatedAt: d.lastStateUpdate,
   };
@@ -93,12 +104,13 @@ export const rememberServer = (url: string) => keep(SERVER, url);
 export const lastToken = () => kept(TOKEN);
 export const rememberToken = (token: string) => keep(TOKEN, token);
 
-type Event = { type?: string; topic?: string; payload?: string };
-type StateChanged = { type?: string; value?: string; lastStateChange?: string; lastStateUpdate?: string };
+// A state as the stream tells it (`/rest/events/states`): the state, and openHAB's own words for it
+// (not read: the model has the item's pattern). An Image's is a line about its bytes, never the picture.
+type Tracked = { state?: string; displayState?: string };
 
-// The server over its REST API: every item once, then the events of their
-// states changing; a lost stream is opened again, later each time. The events
-// of a second are told together, so the board paints once for them.
+// The server over its REST API: every item once, then the stream of their
+// states; a lost stream is opened again, later each time. The changes of a
+// moment are told together, so the board paints once for them.
 export class RestSource implements HouseSource {
   readonly items: Items = new Map();
   structure = 0;
@@ -112,6 +124,9 @@ export class RestSource implements HouseSource {
   private flushTimer = 0;
   private changed = new Set<string>();
   private stopped = true;
+  private snapshot = false;          // the stream's first block, every tracked state at once, has come
+  // The Images read because they were looked at: being read, as read, or changed since (the stream said so).
+  private pictures = new Map<string, 'loading' | 'fresh' | 'stale'>();
   private listeners = new Set<(names: string[]) => void>();
   private statusListeners = new Set<() => void>();
   private structureListeners = new Set<() => void>();
@@ -150,24 +165,23 @@ export class RestSource implements HouseSource {
     this.abort = null;
   }
 
-  // The root names the version; the items fill the house; the stream keeps it.
+  // The root names the version; the items fill the house, without their states; the stream brings those.
   private async open() {
     try {
       const [root, list] = await Promise.all([
         fetch(`${this.base}/rest/`, { headers: { Accept: 'application/json', ...this.headers() }, signal: AbortSignal.timeout(15_000) }),
-        fetch(`${this.base}/rest/items?metadata=semantics&recursive=false`, { headers: { Accept: 'application/json', ...this.headers() }, signal: AbortSignal.timeout(20_000) }),
+        fetch(`${this.base}/rest/items?metadata=semantics&recursive=false&fields=${FIELDS}`, { headers: { Accept: 'application/json', ...this.headers() }, signal: AbortSignal.timeout(20_000) }),
       ]);
       if (list.status === 401 || list.status === 403) { this.setStatus('error', t.errUnauthorized); return; }
       if (!list.ok) throw new Error(`${list.status}`);
       if (root.ok) { const info = (await root.json()) as { timezone?: string; runtimeInfo?: { version?: string } }; this.version = info.runtimeInfo?.version ?? ''; this.timezone = info.timezone ?? ''; }
       const dtos = (await list.json()) as ItemDto[];
       const names = new Set(dtos.map((d) => d.name));
-      for (const name of [...this.items.keys()]) if (!names.has(name)) this.items.delete(name);
-      for (const d of dtos) this.items.set(d.name, itemOf(d));
-      this.structure++;
-      this.setStatus('live');
-      this.structureListeners.forEach((fn) => fn());
-      this.listeners.forEach((fn) => fn([...names]));
+      for (const name of [...this.items.keys()]) if (!names.has(name)) { this.items.delete(name); this.pictures.delete(name); }
+      // An item read before keeps its state until the stream tells the current one: nothing goes blank on a reconnect.
+      for (const d of dtos) { const was = this.items.get(d.name), fresh = itemOf(d); this.items.set(d.name, { ...fresh, state: d.state ?? was?.state ?? fresh.state }); }
+      // A picture may have changed while the stream was down: read again when looked at.
+      for (const [name, st] of this.pictures) if (st === 'fresh') this.pictures.set(name, 'stale');
     } catch (error) {
       if (this.stopped) return;
       if (!this.items.size) { this.setStatus('error', t.errNoServer(this.shown, error instanceof Error ? error.message : String(error))); this.later(); return; }
@@ -176,17 +190,18 @@ export class RestSource implements HouseSource {
     void this.listen();
   }
 
-  // The stream of states changing, read as it comes (fetch, so a token can
-  // go along, which EventSource cannot send): each event a block of lines.
+  // The stream of states, read as it comes (fetch, so a token can go along,
+  // which EventSource cannot send): each event a block of lines. openHAB names
+  // the connection first; the items to follow are posted to it by name; their
+  // states come at once, then each one that changes, and a heartbeat.
   private async listen() {
     const ctl = new AbortController();
     this.abort?.abort();
     this.abort = ctl;
+    this.snapshot = false;
     try {
-      const res = await fetch(`${this.base}/rest/events?topics=openhab/items/*/statechanged`, { headers: { Accept: 'text/event-stream', ...this.headers() }, signal: ctl.signal });
+      const res = await fetch(`${this.base}/rest/events/states`, { headers: { Accept: 'text/event-stream', ...this.headers() }, signal: ctl.signal });
       if (!res.ok || !res.body) throw new Error(`${res.status}`);
-      this.retry = 0;
-      if (this.status !== 'live') this.setStatus('live');
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
       let buffer = '';
       for (;;) {
@@ -194,7 +209,7 @@ export class RestSource implements HouseSource {
         if (done) break;
         buffer += value;
         let at: number;
-        while ((at = buffer.indexOf('\n\n')) >= 0) { this.event(buffer.slice(0, at)); buffer = buffer.slice(at + 2); }
+        while ((at = buffer.indexOf('\n\n')) >= 0) { this.event(buffer.slice(0, at), ctl); buffer = buffer.slice(at + 2); }
       }
     } catch { /* closed or failed: below */ }
     if (this.abort !== ctl || this.stopped) return;
@@ -207,21 +222,82 @@ export class RestSource implements HouseSource {
     this.timer = window.setTimeout(() => { if (!this.stopped) void this.open(); }, wait);
   }
 
-  // One event: an item's state changed (the heartbeat, ALIVE, is not one).
-  private event(block: string) {
-    const data = block.split('\n').filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim()).join('\n');
-    if (!data) return;
+  // One event: the connection's name (`ready`), a block of states (unnamed), or the heartbeat (`alive`).
+  private event(block: string, ctl: AbortController) {
+    let name = '', data = '';
+    for (const raw of block.split('\n')) {
+      const line = raw.trimEnd();
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) data += (data ? '\n' : '') + line.slice(5).trim();
+    }
+    if (name === 'ready') { void this.track(data, ctl); return; }
+    if (name || !data) return;
+    try { this.arrive(JSON.parse(data) as Record<string, Tracked>); } catch { /* not states */ }
+  }
+
+  // Which items the stream follows: every one (an Image too: the line about its bytes says when the
+  // picture changed). Refused, there is no stream: it is opened again, later.
+  private async track(id: string, ctl: AbortController) {
+    const names = [...this.items.keys()];
     try {
-      const ev = JSON.parse(data) as Event;
-      if (ev.type !== 'ItemStateChangedEvent' || !ev.topic || !ev.payload) return;
-      const name = ev.topic.split('/')[2], was = this.items.get(name);
-      const p = JSON.parse(ev.payload) as StateChanged;
-      if (!was || p.value == null) return;
-      const now = Date.now();
-      this.items.set(name, { ...was, state: p.value, changedAt: whenOf(p.lastStateChange) ?? now, updatedAt: whenOf(p.lastStateUpdate) ?? now });
+      const res = await fetch(`${this.base}/rest/events/states/${encodeURIComponent(id)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...this.headers() }, body: JSON.stringify(names), signal: ctl.signal,
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      if (!names.length) this.arrive({});
+    } catch { if (this.abort === ctl) ctl.abort(); }
+  }
+
+  // States from the stream. The first block is every tracked item at once: the
+  // house is complete then (live, and the board reads it); the times of the
+  // last change came with the list. Each later block is what changed, told
+  // together a moment later. An Image read before keeps its picture and is
+  // marked changed, to be read again when looked at.
+  private arrive(states: Record<string, Tracked>) {
+    const first = !this.snapshot, now = Date.now();
+    this.snapshot = true;
+    for (const [name, s] of Object.entries(states)) {
+      const was = this.items.get(name);
+      if (!was || s.state == null || s.state === was.state) continue;
+      if (was.type === 'Image' && this.pictures.has(name)) this.pictures.set(name, 'stale');
+      else this.items.set(name, first ? { ...was, state: s.state } : { ...was, state: s.state, changedAt: now, updatedAt: now });
+      if (!first) this.changed.add(name);
+    }
+    if (!first) { this.flush(); return; }
+    this.retry = 0;
+    this.structure++;
+    this.setStatus('live');
+    this.structureListeners.forEach((fn) => fn());
+    this.listeners.forEach((fn) => fn([...this.items.keys()]));
+  }
+  private flush() {
+    if (this.flushTimer || !this.changed.size) return;
+    this.flushTimer = window.setTimeout(() => { this.flushTimer = 0; const names = [...this.changed]; this.changed.clear(); this.listeners.forEach((fn) => fn(names)); }, 300);
+  }
+
+  // The viewer is looking at this item. An Image's state is its picture, left out of the list and of
+  // the stream: it is read now, once, and again after the stream says it changed. Not read, it is
+  // asked for again a while later.
+  want(name: string) {
+    const i = this.items.get(name), had = this.pictures.get(name);
+    if (!i || i.type !== 'Image' || had === 'loading' || had === 'fresh' || this.stopped) return;
+    this.pictures.set(name, 'loading');
+    void this.picture(name);
+  }
+  private async picture(name: string) {
+    try {
+      const res = await fetch(`${this.base}/rest/items/${encodeURIComponent(name)}/state`, { headers: { Accept: 'text/plain', ...this.headers() }, signal: AbortSignal.timeout(30_000) });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const state = (await res.text()).trim(), was = this.items.get(name);
+      if (!was) return;
+      this.pictures.set(name, 'fresh');
+      if (state === was.state) return;
+      this.items.set(name, { ...was, state });
       this.changed.add(name);
-      if (!this.flushTimer) this.flushTimer = window.setTimeout(() => { this.flushTimer = 0; const names = [...this.changed]; this.changed.clear(); this.listeners.forEach((fn) => fn(names)); }, 300);
-    } catch { /* not an item's event */ }
+      this.flush();
+    } catch {
+      window.setTimeout(() => { if (this.pictures.get(name) === 'loading') this.pictures.delete(name); }, 10_000);
+    }
   }
 
   // A command to an item, answered by whatever binding owns it (the state comes back on the stream).

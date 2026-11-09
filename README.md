@@ -284,7 +284,10 @@ lights, climate, openings, security, media, energy, weather and people.
   in Main UI is where items get their tags; a home modeled there is ready.
 - A current browser. The rings use modern CSS.
 - The app is a folder of about 950 kB (265 kB compressed), loaded once. It
-  uses your openHAB's REST API; nothing runs on the server.
+  uses your openHAB's REST API; nothing runs on the server. It reads your
+  items once without their states (a few hundred kilobytes for a thousand
+  items) and follows them over openHAB's state stream, the one Main UI reads;
+  a picture (a speaker's cover) is read only when it is on screen.
 
 ### Install
 
@@ -427,6 +430,9 @@ state uses the words its state description gives it (a lock's "locked" and
 - **A command does nothing.** The page tells you what openHAB answered: an
   item that does not take that command, or a server that refused it. The
   state comes back from the server, never assumed.
+- **A cover appears a moment after the rest.** Pictures are read when they
+  come on screen, not with the house, so that a home with cameras does not
+  load their snapshots at every start.
 
 ## Demo homes
 

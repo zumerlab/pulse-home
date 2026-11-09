@@ -124,9 +124,15 @@ dashboard's existing `hass` object instead of opening its own connection.
 ### openHAB
 
 The app reads the REST API: every item with its semantic metadata at start
-and whenever the structure changes, the state changes over the event stream
-(`/rest/events`, read with `fetch` so the token travels with it, batched into
-one repaint every 300 ms, reconnected with a growing wait), commands as
+and at every reconnect, asked by field (`fields=`) so that the states stay
+out of the list (an Image item's state is its picture inlined; a home with
+cameras would be tens of megabytes at every load); the states over openHAB's
+state stream (`/rest/events/states`, the one Main UI reads: the connection is
+named first, the items to follow are posted to it, their states come at once
+and then each change; read with `fetch` so the token travels with it, batched
+into one repaint every 300 ms, reconnected with a growing wait); an Image's
+picture from `/rest/items/<name>/state` when a reading shows it (a speaker's
+cover), and again once the stream says it changed; commands as
 `POST /rest/items/<name>`, and a day of a point from `/rest/persistence`.
 The home's time zone and the server's version come from `/rest/`. A token
 goes with every request as a Bearer header: one pasted in the panel is kept
@@ -266,7 +272,12 @@ demo.openhab.org one evening: 233 items with their semantics, a day of
 history for 38 of them, the home's time zone. Played back, the recording is
 moved to now, breathes every three seconds and echoes commands after 400 ms
 by item type: a light turns on, a heating turns off, a speaker pauses. The
-Playwright tests use it to exercise the app without a running openHAB.
+Playwright tests use it to exercise the app without a running openHAB; the
+live path (`RestSource`) is tested against
+[tests/openhab-server.mjs](tests/openhab-server.mjs), a stand-in of
+openHAB 5's API over the same recording that Playwright starts on port 5175:
+the list asked by field, the state stream, a cover read alone when shown, a
+command echoed (`/_asked` says what the app read).
 
 The house is recorded again with:
 
@@ -325,7 +336,9 @@ available in development and is excluded from the app build.
 The tests run over the demos, one development server for all:
 [tests/ha.spec.ts](tests/ha.spec.ts) covers the Home Assistant app, the card
 and the gallery; [tests/openhab.spec.ts](tests/openhab.spec.ts) the openHAB
-app. Live Home Assistant tests are in
+app, over the recorded house and over the stand-in server
+[tests/openhab-server.mjs](tests/openhab-server.mjs) that Playwright starts
+on port 5175 (`PULSE_OPENHAB_PORT` moves it). Live Home Assistant tests are in
 [tests/ha-live.spec.ts](tests/ha-live.spec.ts) and are skipped unless
 `PULSE_HA_TOKENS` points to a tokens file.
 

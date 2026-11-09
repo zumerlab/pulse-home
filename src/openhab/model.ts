@@ -62,10 +62,11 @@ export type House = {
   parent: Map<string, string>;      // a location → the location it is part of (a room → its floor)
   equipment: Map<string, string>;   // a point → its equipment
   points: Map<string, string[]>;    // an equipment → its points
+  want?: (name: string) => void;    // tells the source the viewer is looking at an item (an Image's picture is read then)
 };
 // The room of what is in no location (the inverter, the weather, the people).
 export const NO_ROOM = '';
-export function houseOf(items: Items, timezone?: string): House {
+export function houseOf(items: Items, timezone?: string, want?: (name: string) => void): House {
   const all = [...items.values()];
   const location = new Map<string, string>(), parent = new Map<string, string>(), equipment = new Map<string, string>(), points = new Map<string, string[]>();
   const firstGroup = (i: Item, cls: string) => i.groups.find((gr) => is(items.get(gr), cls));
@@ -86,7 +87,7 @@ export function houseOf(items: Items, timezone?: string): House {
     return at;
   };
   for (const i of all) if (!is(i, 'Location')) place(i);
-  return { items, timezone, get all() { return [...items.values()]; }, location, parent, equipment, points };
+  return { items, timezone, want, get all() { return [...items.values()]; }, location, parent, equipment, points };
 }
 
 // An item's words: its label, or its name made into words ('LivingRoom_HVAC_Temperature' → 'Living Room HVAC Temperature').
@@ -323,7 +324,10 @@ export const systems: System[] = [
       const segs: Seg[] = all.map((p) => ({ label: nameOf(h, p.eq.name), on: playing(p), id: p.play.name, act: cmd(p.play.name, playing(p) ? 'PAUSE' : 'PLAY') }));
       const live = all.filter(playing), lead = live[0];
       const title = lead ? [lead.title?.state, lead.artist?.state].filter((s) => s && s !== 'NULL' && s !== 'UNDEF').join(' · ') : '';
-      const art = lead?.cover && isPicture(lead.cover.state) ? lead.cover : undefined;
+      // The cover's picture is read when it is looked at, not with the house: here it is.
+      const cover = lead?.cover;
+      if (cover) h.want?.(cover.name);
+      const art = cover && isPicture(cover.state) ? cover : undefined;
       return { kind: 's', segs, ids: all.map((p) => p.play.name), big: live.length ? `${live.length} of ${all.length}` : 'Silence',
         label: live.length ? title || listOf(live.map((p) => lower(nameOf(h, p.eq.name)))) : 'all paused',
         image: art && lead ? { src: art.state, alt: title || nameOf(h, lead.eq.name), id: art.name } : undefined };
