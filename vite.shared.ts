@@ -25,7 +25,8 @@ export const withCore = (config: UserConfig): UserConfig => ({
     dedupe: [...(config.resolve?.dedupe ?? []), '@zumer/orbit', 'zumly', 'hls.js'],
     alias: [
       ...(live ? [
-        { find: /^@zumer\/pulse\/style\.css$/, replacement: `${pulse}src/style.css` },
+        // With its query too: the card takes the stylesheet as text (`?inline`), and without this it got the npm package's.
+        { find: /^@zumer\/pulse\/style\.css(\?.*)?$/, replacement: `${pulse}src/style.css$1` },
         { find: /^@zumer\/pulse$/, replacement: `${pulse}src/index.ts` },
       ] : []),
       ...entries(config.resolve?.alias),
