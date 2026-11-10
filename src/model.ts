@@ -756,7 +756,8 @@ const SYSTEMS: PulseSystem[] = [
       const byLevel = [...all].sort((a, b) => pct(a) - pct(b));
       const low = byLevel.filter((id) => pct(id) < LOW_BATTERY);
       const ids = [...low, ...all.filter((id) => !low.includes(id))].slice(0, 8);
-      const segs = ids.map((id) => ({ label: `${nameOf(s, id)} ${num(pct(id), 0)}%`, on: pct(id) >= LOW_BATTERY, id }));
+      // Each battery by its name: how full it is is its state, said beside it.
+      const segs = ids.map((id) => ({ label: nameOf(s, id), on: pct(id) >= LOW_BATTERY, id }));
       return { kind: 's', segs, ids: all, big: low.length ? `${low.length} low` : `${num(pct(byLevel[0]), 0)}% lowest`,
         label: low.length ? list(low.map((id) => whereIs(s, id))) : `${all.length} batteries`,
         alert: low.length ? { level: 1, big: `${num(pct(low[0]), 0)}%`, label: whereIs(s, low[0]).toLowerCase(),

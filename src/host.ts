@@ -19,9 +19,21 @@ const stateWords: Record<string, string> = {
   cleaning: 'cleaning', docked: 'docked', returning: 'returning', disarmed: 'disarmed', armed_home: 'armed (home)',
   armed_away: 'armed (away)', arming: 'arming', triggered: 'triggered', unavailable: 'unavailable',
 };
+// A binary sensor says what it senses, in Home Assistant's own words for its class (not "on" and "off").
+const sensorWords: Record<string, [string, string]> = {
+  motion: ['detected', 'clear'], occupancy: ['detected', 'clear'], presence: ['home', 'away'], moving: ['moving', 'stopped'],
+  vibration: ['detected', 'clear'], sound: ['detected', 'clear'], smoke: ['detected', 'clear'], gas: ['detected', 'clear'],
+  carbon_monoxide: ['detected', 'clear'], tamper: ['tampering detected', 'clear'], safety: ['unsafe', 'safe'],
+  moisture: ['wet', 'dry'], door: ['open', 'closed'], window: ['open', 'closed'], opening: ['open', 'closed'],
+  garage_door: ['open', 'closed'], lock: ['unlocked', 'locked'], battery: ['low', 'normal'], problem: ['problem', 'ok'],
+  connectivity: ['connected', 'disconnected'], plug: ['plugged in', 'unplugged'], power: ['power', 'no power'],
+};
 export function stateText(e: HassState) {
   const u = e.attributes.unit_of_measurement;
-  return `${stateWords[e.state] ?? e.state}${u ? ` ${String(u)}` : ''}`;
+  const words = e.entity_id.startsWith('binary_sensor.') ? sensorWords[String(e.attributes.device_class)] : undefined;
+  if (words && (e.state === 'on' || e.state === 'off')) return words[e.state === 'on' ? 0 : 1];
+  // A percentage sits against its number, as Home Assistant writes it; any other unit after a space.
+  return `${stateWords[e.state] ?? e.state}${u ? (u === '%' ? '%' : ` ${String(u)}`) : ''}`;
 }
 
 export function hostOf(src: PulseSource): PulseHost {
