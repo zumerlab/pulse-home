@@ -362,7 +362,8 @@ test("a switched channel's detail draws a day per entity as rings, outside in, n
   await expect(rings.locator('.track-name')).toHaveCount(8);
   await expect(rings.locator('.track-name').first()).toContainText('Ceiling light');
   await expect(rings.locator('.time-tick')).toHaveCount(24);
-  await expect(rings.locator('.time-hour')).toHaveCount(3);
+  await expect(rings.locator('.time-hour')).toHaveCount(4);
+  await expect(rings.locator('.time-hour.is-now')).toContainText('now');
   const spans = await rings.locator('.track-span').count();
   expect(spans).toBeGreaterThan(0);
   // What is now sits in the center; the header's big number moved there.
@@ -429,7 +430,7 @@ test('the gear can open the dial at the bottom and put hour marks on the day rin
   await current(page).locator('.layer-front .disc').click();
   const ring = current(page).locator('.time-ring.has-marks');
   await expect(ring.locator('.time-tick')).toHaveCount(24);
-  await expect(ring.locator('.time-hour')).toHaveCount(3);
+  await expect(ring.locator('.time-hour')).toHaveCount(4);
 });
 
 test('a color light takes its hue and saturation from two curved sliders inside its brightness dial', async ({ page }) => {
@@ -796,28 +797,25 @@ const folded = (page: Page) => page.addInitScript(() => {
   if (!sessionStorage.getItem('folded')) { localStorage.setItem('pulse-ha-settings', '{}'); sessionStorage.setItem('folded', '1'); }
 });
 
-test('the list is a queue on two rings: what calls inside by urgency, the calm folded outside, the center on the most serious', async ({ page }) => {
+// The demo home's one alert is a notice (a low battery, level 1): the calm stay on the board. The fold, kept for
+// what is critical, is tested in the core (the greenhouse's empty tank).
+test('the list is a queue on two rings: what calls inside by urgency, the calm outside, the center on the most serious', async ({ page }) => {
   await folded(page);
   await page.goto(`${HA}?demo=home&mode=list`);
   const rings = page.locator('.queue-rings');
   const items = rings.locator('.queue-item');
   await expect(rings).toBeVisible();
-  const calling = await items.count();
-  expect(calling).toBeGreaterThan(0);
-  expect(calling).toBeLessThan(7);
-  await expect(rings.locator('.queue-item:not(.level-1):not(.level-2)')).toHaveCount(0);
-  // The calm, folded into one button on the outer ring.
-  const fold = rings.locator('.queue-fold [data-calm]');
-  await expect(fold).toHaveAttribute('aria-expanded', 'false');
+  // Every system on the rings, all of one size: what calls first, and a notice folds nothing.
+  await expect(items).toHaveCount(8);
+  await expect(rings.locator('.queue-item.level-1, .queue-item.level-2')).toHaveCount(1);
+  await expect(items.first()).toHaveClass(/level-1/);
+  await expect(rings.locator('.queue-fold')).toHaveCount(0);
+  await expect(page.locator('.queue-foot .calm-toggle')).toHaveCount(0);
+  const sizes = await items.evaluateAll((els) => [...new Set(els.map((e) => (e.querySelector('.queue-hit') as HTMLElement).offsetWidth))]);
+  expect(sizes).toHaveLength(1);
   // The center holds the first of the queue, the most serious.
   const first = await items.first().locator('.queue-title').textContent();
   await expect(rings.locator('.list-center .face-name')).toHaveText(first!);
-  // Open: every system on the rings, all of one size; the fold goes under the object.
-  await fold.click();
-  await expect(items).toHaveCount(8);
-  const sizes = await items.evaluateAll((els) => [...new Set(els.map((e) => (e.querySelector('.queue-hit') as HTMLElement).offsetWidth))]);
-  expect(sizes).toHaveLength(1);
-  await expect(page.locator('.queue-foot .calm-toggle')).toHaveText('Fold the calm');
   // A calm one in the center offers the way back to what matters.
   const calm = rings.locator('.queue-item:not(.level-1):not(.level-2)').first();
   const name = await calm.locator('.queue-title').textContent();
@@ -856,23 +854,19 @@ test('in the list the center faces the system it shows; tapped again, that syste
   await expect(rings.locator('.queue-hand')).toHaveCount(1);
 });
 
-test('while something calls the grid folds the calm into one tile, the orbit queues by urgency, and the choice to open them is kept', async ({ page }) => {
+test('a notice comes first and folds nothing in the grid, the orbit queues by urgency, and the view switch waits in the gear', async ({ page }) => {
   await folded(page);
   await page.goto(`${HA}?demo=home&mode=grid`);
   const tiles = page.locator('.tile[data-system]');
-  const fold = page.locator('.tile.calm-fold');
-  await expect(fold).toHaveAttribute('aria-expanded', 'false');
-  const n = await tiles.count();
-  expect(n).toBeLessThan(7);
-  expect(await page.locator('.tile[data-system].has-alert').count()).toBe(n);
+  // A low battery is a notice: its system leads, the rest of the home stays on the board.
+  await expect(tiles).toHaveCount(8);
+  await expect(tiles.first()).toHaveClass(/has-alert level-1/);
+  await expect(page.locator('.tile[data-system].has-alert')).toHaveCount(1);
+  await expect(page.locator('.tile.calm-fold')).toHaveCount(0);
   // What calls never grows: no transform on its ring, a wave leaves it instead.
   const ring = page.locator('.tile.has-alert .mini-ring').first();
   expect(await ring.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
   expect(await ring.evaluate((el) => getComputedStyle(el, '::after').animationName)).toBe('wave');
-  await fold.click();
-  await expect(tiles).toHaveCount(8);
-  await page.reload();
-  await expect(tiles).toHaveCount(8);
   // In the orbit the most serious comes first, clockwise from the top.
   await page.goto(`${HA}?demo=home&mode=orbit`);
   const levels = await page.locator('.otile').evaluateAll((els) => els.map((e) => Number(/level-(\d)/.exec(e.className)?.[1] ?? 0)));
