@@ -15,7 +15,7 @@
     "build:card": "vite build -c vite.card.config.ts",
     "build:openhab": "vite build -c vite.openhab.config.ts",
     "build:pages": "vite build -c vite.pages.config.ts",
-    "pack:openhab": "npm run build:openhab && cd dist-openhab && zip -qr ../pulse-openhab.zip .",
+    "pack:openhab": "npm run build:openhab && rm -f pulse-openhab.zip && cd dist-openhab && zip -qr ../pulse-openhab.zip .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
