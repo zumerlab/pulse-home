@@ -346,6 +346,9 @@ For local integration work, `scripts/ha-tokens.mjs` creates a tokens file from
 `.env.local`. `scripts/ha-install-card.mjs` registers a dashboard resource and
 creates or updates two test dashboards in Home Assistant;
 `scripts/ha-check-card.mjs` checks them with Playwright and saves screenshots.
+The README's pictures of the card inside Home Assistant are those screenshots;
+the ones of the demo homes come from `node scripts/readme-shots.mjs`, which
+writes them into `docs/images/`.
 `scripts/record-tour.mjs <dir> [ffmpeg]` records two short videos of the
 Home Assistant app over a demo home with Playwright, for a post or a page:
 the board (views, rooms, themes, backgrounds) and the inside of a system (a

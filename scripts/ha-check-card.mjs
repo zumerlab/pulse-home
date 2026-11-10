@@ -54,15 +54,22 @@ report.push(['pulse-demo', found]);
 if (found.length) {
   const box = found[0].box;
   await shot('dashboard-grid', box);
-  for (const mode of ['orbit', 'layers']) {
-    const [btn] = await deep(`.modes [data-mode="${mode}"]`);
-    if (!btn) continue;
-    await page.mouse.click(...center(btn));
+  // The switch between views waits in the gear (the board shows it only when asked): each view is chosen there.
+  const view = async (mode) => {
+    const [gearBtn] = await deep('.gear');
+    if (!gearBtn) return false;
+    await page.mouse.click(...center(gearBtn));
+    await page.waitForTimeout(600);
+    const [tab] = await deep('.settings [data-tab="board"]');
+    if (tab) { await page.mouse.click(...center(tab)); await page.waitForTimeout(300); }
+    const [radio] = await deep(`.settings input[name="mode"][value="${mode}"]`);
+    if (radio) await page.mouse.click(...center(radio));
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(2500);
-    await shot(`dashboard-${mode}`, box);
-  }
-  const [grid] = await deep('.modes [data-mode="grid"]');
-  if (grid) { await page.mouse.click(...center(grid)); await page.waitForTimeout(1500); }
+    return !!radio;
+  };
+  for (const mode of ['orbit', 'layers']) if (await view(mode)) await shot(`dashboard-${mode}`, box);
+  await view('grid');
   const [gear] = await deep('.gear');
   if (gear) {
     await page.mouse.click(...center(gear));

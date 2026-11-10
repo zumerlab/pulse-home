@@ -482,7 +482,7 @@ The detail view adds what the ring cannot show: sensor history, a picture,
 color controls, the things behind a reading. **View flat** shows the system
 as a list.
 
-![Security opened on a jammed lock](docs/images/dashboard-system.png)
+![Security opened on its sirens sounding, the sensors and the locks waiting behind](docs/images/dashboard-system.png)
 
 An alert comes with an action when there is one: **Retry**, **Disarm**,
 **Turn off heating**. **Mute** moves an alert behind the active layer and
