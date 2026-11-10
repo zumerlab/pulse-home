@@ -1,6 +1,6 @@
 {
   "name": "pulse-home",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Pulse for the home: Home Assistant (the standalone app, the zumer-pulse card and the dashboard and section strategies) and openHAB (the app, served from openHAB itself), over a live home or the demo homes.",
@@ -22,7 +22,7 @@
     "test:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@zumer/pulse": "^0.0.0",
+    "@zumer/pulse": "^0.1.0",
     "home-assistant-js-websocket": "9.8.1"
   },
   "devDependencies": {
